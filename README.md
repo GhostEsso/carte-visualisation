@@ -80,7 +80,7 @@
 
 ## 🚀 Live Demo <a name="live-demo"></a>
 
-- [Live Demo](https://carte-visualisation.vercel.app) (coming soon)
+- [Live Demo](https://carte-visualisation-ok.vercel.app/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
