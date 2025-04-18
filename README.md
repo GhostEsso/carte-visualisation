@@ -1,86 +1,223 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center" id="readme-top">
+  <img src="public/carte-visu-logo.svg" alt="logo" width="140" height="auto" />
+  <br/>
 
-## Getting Started
+  <h3><b>Carte Visualisation</b></h3>
 
-First, run the development server:
+</div>
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+<!-- TABLE OF CONTENTS -->
+
+# 📗 Table des matières
+
+- [📖 À propos du projet](#about-project)
+  - [🛠 Technologies utilisées](#built-with)
+    - [Stack technique](#tech-stack)
+    - [Fonctionnalités clés](#key-features)
+  - [🚀 Démo en ligne](#live-demo)
+- [💻 Premiers pas](#getting-started)
+  - [Prérequis](#prerequisites)
+  - [Installation](#setup)
+  - [Dépendances](#install)
+  - [Utilisation](#usage)
+  - [Tests](#run-tests)
+  - [Déploiement](#deployment)
+- [👥 Auteurs](#authors)
+- [🔭 Fonctionnalités futures](#future-features)
+- [🤝 Contribuer](#contributing)
+- [⭐️ Soutenir le projet](#support)
+- [🙏 Remerciements](#acknowledgements)
+- [❓ FAQ](#faq)
+- [📝 Licence](#license)
+
+<!-- DESCRIPTION DU PROJET -->
+
+# 📖 Carte Visualisation <a name="about-project"></a>
+
+**Carte Visualisation** est une application web interactive permettant de visualiser et d'analyser des données géospatiales sur une carte. Elle offre des outils de dessin pour sélectionner des zones et affiche des statistiques et graphiques pour les données dans les zones sélectionnées.
+
+## 🛠 Technologies utilisées <a name="built-with"></a>
+
+### Stack technique <a name="tech-stack"></a>
+
+<details>
+  <summary>Client</summary>
+  <ul>
+    <li><a href="https://nextjs.org/">Next.js</a></li>
+    <li><a href="https://reactjs.org/">React.js</a></li>
+    <li><a href="https://www.typescriptlang.org/">TypeScript</a></li>
+    <li><a href="https://www.chartjs.org/">Chart.js</a></li>
+  </ul>
+</details>
+
+<details>
+  <summary>Cartographie</summary>
+  <ul>
+    <li><a href="https://leafletjs.com/">Leaflet</a></li>
+  </ul>
+</details>
+
+<details>
+  <summary>Gestion des données</summary>
+  <ul>
+    <li>Services API avec cache intégré</li>
+    <li>Exportation au format CSV, JSON et GeoJSON</li>
+  </ul>
+</details>
+
+<!-- FONCTIONNALITÉS CLÉS -->
+
+### Fonctionnalités clés <a name="key-features"></a>
+
+- **Sélection de zones** - Dessinez des cercles, rectangles ou polygones sur la carte pour sélectionner des zones d'intérêt
+- **Visualisation de données** - Affichez les données sous forme de tableaux et de graphiques (camembert, barres, lignes)
+- **Filtres et tri** - Filtrez et triez les données selon différents critères
+- **Exportation des données** - Exportez les données au format CSV, JSON ou GeoJSON
+- **Mise en cache** - Système de cache pour améliorer les performances des requêtes API
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- DÉMO EN LIGNE -->
+
+## 🚀 Démo en ligne <a name="live-demo"></a>
+
+- [Démo en ligne](https://carte-visualisation.vercel.app) (à venir)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- PREMIERS PAS -->
+
+## 💻 Premiers pas <a name="getting-started"></a>
+
+Pour obtenir une copie locale du projet et la faire fonctionner, suivez ces étapes.
+
+### Prérequis <a name="prerequisites"></a>
+
+Pour exécuter ce projet, vous avez besoin de :
+
+- Node.js (v14 ou supérieur)
+- npm ou yarn
+
+### Installation <a name="setup"></a>
+
+Clonez ce dépôt sur votre machine locale :
+
+```sh
+  git clone git@github.com:GhostEsso/carte-visualisation.git
+  cd carte-visualisation
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Dépendances <a name="install"></a>
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Installez les dépendances du projet :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+  npm install
+  # ou
+  yarn install
+```
 
-## Learn More
+### Utilisation <a name="usage"></a>
 
-To learn more about Next.js, take a look at the following resources:
+Pour lancer le serveur de développement, exécutez :
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sh
+  npm run dev
+  # ou
+  yarn dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur pour voir l'application.
 
-## Deploy on Vercel
+### Tests <a name="run-tests"></a>
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Pour exécuter les tests, utilisez la commande :
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```sh
+  npm test
+  # ou
+  yarn test
+```
+
+### Déploiement <a name="deployment"></a>
+
+Vous pouvez déployer cette application sur Vercel ou un autre service d'hébergement compatible avec Next.js :
+
+```sh
+  npm run build
+  # ou
+  yarn build
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- AUTEURS -->
+
+## 👥 Auteurs <a name="authors"></a>
+
+👤 **Essohanam Philippe**
+
+- GitHub: [@GhostEsso](https://github.com/GhostEsso)
+- LinkedIn: [LinkedIn](https://linkedin.com/in/linkedinhandle)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- FONCTIONNALITÉS FUTURES -->
+
+## 🔭 Fonctionnalités futures <a name="future-features"></a>
+
+- [ ] **Analyse spatiale avancée** - Ajout de fonctionnalités d'analyse spatiale comme les calculs de distance, les zones tampons, etc.
+- [ ] **Importation de données personnalisées** - Permettre aux utilisateurs d'importer leurs propres jeux de données pour les visualiser
+- [ ] **Personnalisation des visualisations** - Offrir plus d'options de personnalisation pour les graphiques et les cartes
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- CONTRIBUER -->
+
+## 🤝 Contribuer <a name="contributing"></a>
+
+Les contributions, issues et demandes de fonctionnalités sont les bienvenues !
+
+N'hésitez pas à consulter la [page des issues](https://github.com/GhostEsso/carte-visualisation/issues).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- SOUTIEN -->
+
+## ⭐️ Soutenir le projet <a name="support"></a>
+
+Si vous aimez ce projet, n'hésitez pas à lui donner une étoile sur GitHub et à le partager avec vos collègues !
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- REMERCIEMENTS -->
+
+## 🙏 Remerciements <a name="acknowledgements"></a>
+
+Merci à tous ceux qui ont contribué à ce projet et fourni inspiration et conseils.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- FAQ -->
+
+## ❓ FAQ <a name="faq"></a>
+
+- **L'application fonctionne-t-elle hors ligne ?**
+
+  - Non, l'application nécessite une connexion internet pour charger les données cartographiques et effectuer les requêtes API.
+
+- **Comment puis-je ajouter mes propres données à visualiser ?**
+
+  - Cette fonctionnalité est prévue pour une version future. Actuellement, l'application utilise des données prédéfinies.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- LICENCE -->
+
+## 📝 Licence <a name="license"></a>
+
+Ce projet est sous licence [MIT](./LICENSE).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-Explication du test
-Le test consiste à créer une application web cartographique avec les fonctionnalités suivantes :
-Interface cartographique interactive utilisant Leaflet (pas Google Maps)
-Sélection de zones sur la carte (rectangles, cercles ou polygones)
-Récupération de données via une API basée sur les coordonnées sélectionnées
-Visualisation des données récupérées (graphiques, tableaux, ou sur la carte)
-Gestion des contraintes techniques :
-Pas de bibliothèques UI complètes (Material UI, Ant Design)
-Pas de Redux pour la gestion d'état
-CSS personnalisé (pas de Bootstrap ou Tailwind)
-Étapes de développement
-
-Étape 1 : Configuration du projet
-Installation des dépendances nécessaires (Leaflet, React-Leaflet)
-Structure des dossiers et fichiers
-Configuration de base
-
-Étape 2 : Implémentation de la carte
-Intégration de Leaflet dans l'application
-Configuration de la carte (zoom, position initiale)
-Création des contrôles de base
-
-Étape 3 : Fonctionnalités de sélection de zones
-Implémentation des outils de dessin (rectangles, cercles, polygones)
-Extraction des coordonnées des zones sélectionnées
-Gestion des interactions utilisateur
-
-Étape 4 : Intégration de l'API
-Création des services pour les appels API
-Gestion des requêtes basées sur les coordonnées
-Implémentation de limitations pour éviter les appels excessifs
-Gestion des états de chargement et des erreurs
-
-Étape 5 : Visualisation des données
-Création de composants pour afficher les données (tableaux, graphiques)
-Implémentation de filtres et options de tri
-Mise en place de la pagination
-
-Étape 6 : Styles et responsive design
-Création de styles CSS personnalisés
-Adaptation pour différentes tailles d'écran
-Amélioration de l'expérience utilisateur
-
-Étape 7 : Tests et finalisation
-Vérification de toutes les fonctionnalités
-Optimisations de performance
-Documentation du code
-Commençons par la première étape : la configuration du projet et l'installation des dépendances.
