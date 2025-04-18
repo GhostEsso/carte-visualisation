@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-page-custom-font */
+/* eslint-disable react/jsx-no-comment-textnodes */
 import React from "react";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -22,6 +24,7 @@ export default function RootLayout({
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossOrigin=""
         />
+        // eslint-disable-next-line @next/next/no-page-custom-font
         <link 
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
           rel="stylesheet"
