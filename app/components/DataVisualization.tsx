@@ -184,7 +184,7 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
   };
   
   // Gérer le changement de filtre
-  const handleFilterChange = (key: keyof FilterOptions, value: any) => {
+  const handleFilterChange = (key: keyof FilterOptions, value: unknown) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, page: 1 })); // Revenir à la première page
   };

@@ -3,6 +3,14 @@
 import { DrawnShape } from '../types';
 import L from 'leaflet';
 
+// Étendre les types pour Leaflet-GeometryUtil
+declare module 'leaflet' {
+  // eslint-disable-next-line
+  namespace GeometryUtil {
+    function geodesicArea(latLngs: L.LatLng[]): number;
+  }
+}
+
 interface ZoneInfoProps {
   shape: DrawnShape;
 }

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -16,10 +14,24 @@ import ZoneInfo from './ZoneInfo';
 import SearchBar from './SearchBar';
 import { throttledFetchData } from '../services/api';
 
+// Types étendus pour Leaflet
+declare module 'leaflet' {
+  interface IconDefaultPrototype {
+    _getIconUrl?: string;
+  }
+  
+  // eslint-disable-next-line
+  namespace Icon {
+    interface Default {
+      prototype: IconDefaultPrototype;
+    }
+  }
+}
+
 // Correction pour les icônes Leaflet en environnement Next.js
 // Importera les icônes côté client uniquement
 const fixLeafletIcons = () => {
-  // @ts-ignore
+  // @ts-expect-error - _getIconUrl existe dans l'implémentation mais pas dans les types
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -83,6 +95,29 @@ const ShapeActions = ({ onEdit, onCenter, onDelete }: ShapeActionsProps) => {
   );
 };
 
+// Ajouter une interface pour l'événement de création
+interface DrawCreatedEvent {
+  layerType: string;
+  layer: L.Layer & {
+    getBounds?: () => L.LatLngBounds;
+    getLatLng?: () => L.LatLng;
+    getRadius?: () => number;
+    getLatLngs?: () => L.LatLng[][];
+  };
+}
+
+// Interface pour l'événement d'édition
+interface DrawEditedEvent {
+  layers: {
+    eachLayer: (callback: (layer: L.Layer & {
+      getBounds?: () => L.LatLngBounds;
+      getLatLng?: () => L.LatLng;
+      getRadius?: () => number;
+      getLatLngs?: () => L.LatLng[][];
+    }) => void) => void;
+  };
+}
+
 const MapComponent = () => {
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
   const [selectedShape, setSelectedShape] = useState<DrawnShape | null>(null);
@@ -126,12 +161,13 @@ const MapComponent = () => {
   }, [mapCenter]);
   
   // Gestionnaire pour les formes créées
-  const handleCreated = (e: any) => {
+  const handleCreated = (e: DrawCreatedEvent) => {
     const { layerType, layer } = e;
     
     let newShape: DrawnShape;
     
     if (layerType === 'rectangle') {
+      if (!layer.getBounds) return;
       const bounds = layer.getBounds();
       const corners = [
         bounds.getNorthWest(),
@@ -154,6 +190,7 @@ const MapComponent = () => {
       ]);
       setMapZoom(14);
     } else if (layerType === 'circle') {
+      if (!layer.getLatLng || !layer.getRadius) return;
       newShape = {
         id: `circle-${Date.now()}`,
         type: 'circle',
@@ -166,6 +203,7 @@ const MapComponent = () => {
       setMapCenter([layer.getLatLng().lat, layer.getLatLng().lng]);
       setMapZoom(Math.max(14, 16 - Math.log2(layer.getRadius() / 100)));
     } else if (layerType === 'polygon') {
+      if (!layer.getLatLngs || !layer.getBounds) return;
       const latlngs = layer.getLatLngs()[0];
       const bounds = layer.getBounds();
       
@@ -192,13 +230,14 @@ const MapComponent = () => {
   };
   
   // Gestionnaire pour les formes éditées
-  const handleEdited = (e: any) => {
+  const handleEdited = (e: DrawEditedEvent) => {
     const layers = e.layers;
     
-    layers.eachLayer((layer: any) => {
+    layers.eachLayer((layer) => {
       if (!selectedShape) return;
       
       if (selectedShape.type === 'rectangle') {
+        if (!layer.getBounds) return;
         const bounds = layer.getBounds();
         const corners = [
           bounds.getNorthWest(),
@@ -213,6 +252,7 @@ const MapComponent = () => {
           bounds: bounds
         });
       } else if (selectedShape.type === 'circle') {
+        if (!layer.getLatLng || !layer.getRadius) return;
         setSelectedShape({
           ...selectedShape,
           coordinates: [[layer.getLatLng().lat, layer.getLatLng().lng]],
@@ -220,6 +260,7 @@ const MapComponent = () => {
           radius: layer.getRadius()
         });
       } else if (selectedShape.type === 'polygon') {
+        if (!layer.getLatLngs || !layer.getBounds) return;
         const latlngs = layer.getLatLngs()[0];
         
         setSelectedShape({
