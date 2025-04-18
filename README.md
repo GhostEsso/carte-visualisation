@@ -2,43 +2,42 @@
   <img src="public/carte-visu-logo.svg" alt="logo" width="140" height="auto" />
   <br/>
 
-  <h3><b>Carte Visualisation</b></h3>
+  <h3><b>Map Visualization</b></h3>
 
 </div>
 
 <!-- TABLE OF CONTENTS -->
 
-# 📗 Table des matières
+# 📗 Table of Contents
 
-- [📖 À propos du projet](#about-project)
-  - [🛠 Technologies utilisées](#built-with)
-    - [Stack technique](#tech-stack)
-    - [Fonctionnalités clés](#key-features)
-  - [🚀 Démo en ligne](#live-demo)
-- [💻 Premiers pas](#getting-started)
-  - [Prérequis](#prerequisites)
-  - [Installation](#setup)
-  - [Dépendances](#install)
-  - [Utilisation](#usage)
-  - [Tests](#run-tests)
-  - [Déploiement](#deployment)
-- [👥 Auteurs](#authors)
-- [🔭 Fonctionnalités futures](#future-features)
-- [🤝 Contribuer](#contributing)
-- [⭐️ Soutenir le projet](#support)
-- [🙏 Remerciements](#acknowledgements)
+- [📖 About the Project](#about-project)
+  - [🛠 Built With](#built-with)
+    - [Tech Stack](#tech-stack)
+    - [Key Features](#key-features)
+  - [🚀 Live Demo](#live-demo)
+- [💻 Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
+  - [Install](#install)
+  - [Usage](#usage)
+  - [Run tests](#run-tests)
+  - [Deployment](#deployment)
+- [👥 Authors](#authors)
+- [🔭 Future Features](#future-features)
+- [🤝 Contributing](#contributing)
+- [⭐️ Show your support](#support)
 - [❓ FAQ](#faq)
-- [📝 Licence](#license)
+- [📝 License](#license)
 
-<!-- DESCRIPTION DU PROJET -->
+<!-- PROJECT DESCRIPTION -->
 
-# 📖 Carte Visualisation <a name="about-project"></a>
+# 📖 Map Visualization <a name="about-project"></a>
 
-**Carte Visualisation** est une application web interactive permettant de visualiser et d'analyser des données géospatiales sur une carte. Elle offre des outils de dessin pour sélectionner des zones et affiche des statistiques et graphiques pour les données dans les zones sélectionnées.
+**Map Visualization** is an interactive web application that allows users to visualize and analyze geospatial data on a map. It provides drawing tools to select areas and displays statistics and charts for the data within the selected areas.
 
-## 🛠 Technologies utilisées <a name="built-with"></a>
+## 🛠 Built With <a name="built-with"></a>
 
-### Stack technique <a name="tech-stack"></a>
+### Tech Stack <a name="tech-stack"></a>
 
 <details>
   <summary>Client</summary>
@@ -51,109 +50,109 @@
 </details>
 
 <details>
-  <summary>Cartographie</summary>
+  <summary>Mapping</summary>
   <ul>
     <li><a href="https://leafletjs.com/">Leaflet</a></li>
   </ul>
 </details>
 
 <details>
-  <summary>Gestion des données</summary>
+  <summary>Data Management</summary>
   <ul>
-    <li>Services API avec cache intégré</li>
-    <li>Exportation au format CSV, JSON et GeoJSON</li>
+    <li>API Services with integrated caching</li>
+    <li>Data export in CSV, JSON, and GeoJSON formats</li>
   </ul>
 </details>
 
-<!-- FONCTIONNALITÉS CLÉS -->
+<!-- KEY FEATURES -->
 
-### Fonctionnalités clés <a name="key-features"></a>
+### Key Features <a name="key-features"></a>
 
-- **Sélection de zones** - Dessinez des cercles, rectangles ou polygones sur la carte pour sélectionner des zones d'intérêt
-- **Visualisation de données** - Affichez les données sous forme de tableaux et de graphiques (camembert, barres, lignes)
-- **Filtres et tri** - Filtrez et triez les données selon différents critères
-- **Exportation des données** - Exportez les données au format CSV, JSON ou GeoJSON
-- **Mise en cache** - Système de cache pour améliorer les performances des requêtes API
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- DÉMO EN LIGNE -->
-
-## 🚀 Démo en ligne <a name="live-demo"></a>
-
-- [Démo en ligne](https://carte-visualisation.vercel.app) (à venir)
+- **Area Selection** - Draw circles, rectangles, or polygons on the map to select areas of interest
+- **Data Visualization** - View data in tables and charts (pie, bar, line)
+- **Filters and Sorting** - Filter and sort data according to different criteria
+- **Data Export** - Export data in CSV, JSON, or GeoJSON format
+- **Caching System** - Cache system to improve API request performance
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- PREMIERS PAS -->
+<!-- LIVE DEMO -->
 
-## 💻 Premiers pas <a name="getting-started"></a>
+## 🚀 Live Demo <a name="live-demo"></a>
 
-Pour obtenir une copie locale du projet et la faire fonctionner, suivez ces étapes.
+- [Live Demo](https://carte-visualisation.vercel.app) (coming soon)
 
-### Prérequis <a name="prerequisites"></a>
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-Pour exécuter ce projet, vous avez besoin de :
+<!-- GETTING STARTED -->
 
-- Node.js (v14 ou supérieur)
-- npm ou yarn
+## 💻 Getting Started <a name="getting-started"></a>
 
-### Installation <a name="setup"></a>
+To get a local copy up and running, follow these steps.
 
-Clonez ce dépôt sur votre machine locale :
+### Prerequisites <a name="prerequisites"></a>
+
+To run this project, you need:
+
+- Node.js (v14 or higher)
+- npm or yarn
+
+### Setup <a name="setup"></a>
+
+Clone this repository to your local machine:
 
 ```sh
   git clone git@github.com:GhostEsso/carte-visualisation.git
   cd carte-visualisation
 ```
 
-### Dépendances <a name="install"></a>
+### Install <a name="install"></a>
 
-Installez les dépendances du projet :
+Install the project dependencies:
 
 ```sh
   npm install
-  # ou
+  # or
   yarn install
 ```
 
-### Utilisation <a name="usage"></a>
+### Usage <a name="usage"></a>
 
-Pour lancer le serveur de développement, exécutez :
+To start the development server, run:
 
 ```sh
   npm run dev
-  # ou
+  # or
   yarn dev
 ```
 
-Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur pour voir l'application.
+Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-### Tests <a name="run-tests"></a>
+### Run tests <a name="run-tests"></a>
 
-Pour exécuter les tests, utilisez la commande :
+To run tests, use the command:
 
 ```sh
   npm test
-  # ou
+  # or
   yarn test
 ```
 
-### Déploiement <a name="deployment"></a>
+### Deployment <a name="deployment"></a>
 
-Vous pouvez déployer cette application sur Vercel ou un autre service d'hébergement compatible avec Next.js :
+You can deploy this application on Vercel or another hosting service compatible with Next.js:
 
 ```sh
   npm run build
-  # ou
+  # or
   yarn build
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- AUTEURS -->
+<!-- AUTHORS -->
 
-## 👥 Auteurs <a name="authors"></a>
+## 👥 Authors <a name="authors"></a>
 
 👤 **Essohanam Philippe**
 
@@ -162,39 +161,31 @@ Vous pouvez déployer cette application sur Vercel ou un autre service d'héberg
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- FONCTIONNALITÉS FUTURES -->
+<!-- FUTURE FEATURES -->
 
-## 🔭 Fonctionnalités futures <a name="future-features"></a>
+## 🔭 Future Features <a name="future-features"></a>
 
-- [ ] **Analyse spatiale avancée** - Ajout de fonctionnalités d'analyse spatiale comme les calculs de distance, les zones tampons, etc.
-- [ ] **Importation de données personnalisées** - Permettre aux utilisateurs d'importer leurs propres jeux de données pour les visualiser
-- [ ] **Personnalisation des visualisations** - Offrir plus d'options de personnalisation pour les graphiques et les cartes
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTRIBUER -->
-
-## 🤝 Contribuer <a name="contributing"></a>
-
-Les contributions, issues et demandes de fonctionnalités sont les bienvenues !
-
-N'hésitez pas à consulter la [page des issues](https://github.com/GhostEsso/carte-visualisation/issues).
+- [ ] **Advanced Spatial Analysis** - Addition of spatial analysis features such as distance calculations, buffer zones, etc.
+- [ ] **Custom Data Import** - Allow users to import their own datasets for visualization
+- [ ] **Visualization Customization** - Provide more customization options for charts and maps
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- SOUTIEN -->
+<!-- CONTRIBUTING -->
 
-## ⭐️ Soutenir le projet <a name="support"></a>
+## 🤝 Contributing <a name="contributing"></a>
 
-Si vous aimez ce projet, n'hésitez pas à lui donner une étoile sur GitHub et à le partager avec vos collègues !
+Contributions, issues, and feature requests are welcome!
+
+Feel free to check the [issues page](https://github.com/GhostEsso/carte-visualisation/issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- REMERCIEMENTS -->
+<!-- SUPPORT -->
 
-## 🙏 Remerciements <a name="acknowledgements"></a>
+## ⭐️ Show your support <a name="support"></a>
 
-Merci à tous ceux qui ont contribué à ce projet et fourni inspiration et conseils.
+If you like this project, please give it a star on GitHub and share it with your colleagues!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -202,21 +193,21 @@ Merci à tous ceux qui ont contribué à ce projet et fourni inspiration et cons
 
 ## ❓ FAQ <a name="faq"></a>
 
-- **L'application fonctionne-t-elle hors ligne ?**
+- **Does the application work offline?**
 
-  - Non, l'application nécessite une connexion internet pour charger les données cartographiques et effectuer les requêtes API.
+  - No, the application requires an internet connection to load map data and perform API requests.
 
-- **Comment puis-je ajouter mes propres données à visualiser ?**
+- **How can I add my own data to visualize?**
 
-  - Cette fonctionnalité est prévue pour une version future. Actuellement, l'application utilise des données prédéfinies.
+  - This feature is planned for a future version. Currently, the application uses predefined data.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- LICENCE -->
+<!-- LICENSE -->
 
-## 📝 Licence <a name="license"></a>
+## 📝 License <a name="license"></a>
 
-Ce projet est sous licence [MIT](./LICENSE).
+This project is licensed under the [MIT](./LICENSE) License.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
