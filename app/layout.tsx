@@ -1,9 +1,10 @@
+import React from "react";
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import "./styles/map.css";
 
-const geist = Geist({
+const inter = Inter({
   subsets: ["latin"],
 });
 
@@ -27,7 +28,7 @@ export default function RootLayout({
           crossOrigin=""
         />
       </head>
-      <body className={geist.className}>
+      <body className={inter.className}>
         {children}
       </body>
     </html>
