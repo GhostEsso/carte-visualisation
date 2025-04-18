@@ -1,12 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import "./styles/map.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Visualisation de Données Cartographiques",
@@ -27,9 +22,13 @@ export default function RootLayout({
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossOrigin=""
         />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body
-        className={inter.className}
+        className="font-inter"
         suppressHydrationWarning={true}
       >
         {children}

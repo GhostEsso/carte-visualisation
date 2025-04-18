@@ -12,6 +12,9 @@ const nextConfig = {
   env: {
     // ajoutez vos variables d'environnement ici si besoin
   },
+  experimental: {
+    appDir: true
+  },
   webpack: (config) => {
     return config;
   }
