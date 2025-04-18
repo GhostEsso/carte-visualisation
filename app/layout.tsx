@@ -27,7 +27,10 @@ export default function RootLayout({
           crossOrigin=""
         />
       </head>
-      <body className={geist.className}>
+      <body
+        className={geist.className}
+        suppressHydrationWarning={true}
+      >
         {children}
       </body>
     </html>
