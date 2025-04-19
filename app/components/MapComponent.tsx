@@ -122,7 +122,10 @@ const MapComponent = () => {
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
   const [selectedShape, setSelectedShape] = useState<DrawnShape | null>(null);
   const [pointsOfInterest, setPointsOfInterest] = useState<ApiData[]>([]);
-  const [filteredTypes, setFilteredTypes] = useState<string[]>(['restaurant', 'hospital', 'school', 'park', 'store']);
+  const [filteredTypes, setFilteredTypes] = useState<string[]>([
+    'restaurant', 'hospital', 'school', 'park', 'store', 
+    'transport', 'public_service', 'tourism', 'bank', 'worship', 'other'
+  ]);
   const [loading, setLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>([48.8566, 2.3522]); // Paris
   const [mapZoom, setMapZoom] = useState(13);
@@ -336,7 +339,12 @@ const MapComponent = () => {
       case 'school': return 'green';
       case 'park': return 'darkgreen';
       case 'store': return 'orange';
-      default: return 'gray';
+      case 'transport': return 'purple';
+      case 'public_service': return 'brown';
+      case 'tourism': return 'pink';
+      case 'bank': return 'gold';
+      case 'worship': return 'gray';
+      default: return 'black';
     }
   };
   

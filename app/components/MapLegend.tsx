@@ -2,27 +2,33 @@
 
 import { useState } from 'react';
 
-const poiTypes = [
-  { id: 'restaurant', name: 'Restaurant', color: 'blue' },
-  { id: 'hospital', name: 'Hôpital', color: 'red' },
-  { id: 'school', name: 'École', color: 'green' },
-  { id: 'park', name: 'Parc', color: 'darkgreen' },
-  { id: 'store', name: 'Magasin', color: 'orange' },
-];
-
 interface MapLegendProps {
   onFilterChange: (selectedTypes: string[]) => void;
 }
 
 const MapLegend = ({ onFilterChange }: MapLegendProps) => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(poiTypes.map(type => type.id));
+  // Liste complète des types de points
+  const allTypes = [
+    { id: 'restaurant', label: 'Restaurants', color: 'blue' },
+    { id: 'hospital', label: 'Santé', color: 'red' },
+    { id: 'school', label: 'Éducation', color: 'green' },
+    { id: 'park', label: 'Loisirs & Parcs', color: 'darkgreen' },
+    { id: 'store', label: 'Commerces', color: 'orange' },
+    { id: 'transport', label: 'Transports', color: 'purple' },
+    { id: 'public_service', label: 'Services Publics', color: 'brown' },
+    { id: 'tourism', label: 'Tourisme & Culture', color: 'pink' },
+    { id: 'bank', label: 'Banques', color: 'gold' },
+    { id: 'worship', label: 'Lieux de Culte', color: 'gray' },
+    { id: 'other', label: 'Autres', color: 'black' }
+  ];
   
-  const toggleLegend = () => {
-    setIsOpen(!isOpen);
-  };
+  // État pour suivre les types sélectionnés
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(
+    allTypes.map(type => type.id)
+  );
   
-  const handleTypeToggle = (typeId: string) => {
+  // Gérer le changement d'état d'une case à cocher
+  const handleCheckboxChange = (typeId: string) => {
     const newSelectedTypes = selectedTypes.includes(typeId)
       ? selectedTypes.filter(id => id !== typeId)
       : [...selectedTypes, typeId];
@@ -31,54 +37,40 @@ const MapLegend = ({ onFilterChange }: MapLegendProps) => {
     onFilterChange(newSelectedTypes);
   };
   
+  // Sélectionner/désélectionner tous les types
+  const handleSelectAll = (select: boolean) => {
+    const newSelectedTypes = select ? allTypes.map(type => type.id) : [];
+    setSelectedTypes(newSelectedTypes);
+    onFilterChange(newSelectedTypes);
+  };
+  
   return (
-    <div className={`map-legend ${isOpen ? 'open' : 'closed'}`}>
-      <div className="legend-header" onClick={toggleLegend}>
+    <div className="map-legend">
+      <div className="legend-header">
         <h3>Légende</h3>
-        <span className="toggle-icon">{isOpen ? '▼' : '▶'}</span>
-      </div>
-      
-      {isOpen && (
-        <div className="legend-content">
-          <p><strong>Types de points d&apos;intérêt</strong></p>
-          <ul className="legend-items">
-            {poiTypes.map(type => (
-              <li key={type.id} className="legend-item">
-                <label className="legend-label">
-                  <input
-                    type="checkbox"
-                    checked={selectedTypes.includes(type.id)}
-                    onChange={() => handleTypeToggle(type.id)}
-                  />
-                  <span 
-                    className="legend-marker"
-                    style={{ backgroundColor: type.color }}
-                  />
-                  <span>{type.name}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-          
-          <div className="legend-section">
-            <p><strong>Zones de sélection</strong></p>
-            <div className="legend-shapes">
-              <div className="legend-shape">
-                <div className="shape-rectangle"></div>
-                <span>Rectangle</span>
-              </div>
-              <div className="legend-shape">
-                <div className="shape-circle"></div>
-                <span>Cercle</span>
-              </div>
-              <div className="legend-shape">
-                <div className="shape-polygon"></div>
-                <span>Polygone</span>
-              </div>
-            </div>
-          </div>
+        <div className="legend-actions">
+          <button onClick={() => handleSelectAll(true)}>Tout</button>
+          <button onClick={() => handleSelectAll(false)}>Aucun</button>
         </div>
-      )}
+      </div>
+      <div className="legend-items">
+        {allTypes.map(type => (
+          <div key={type.id} className="legend-item">
+            <label className="legend-label">
+              <input
+                type="checkbox"
+                checked={selectedTypes.includes(type.id)}
+                onChange={() => handleCheckboxChange(type.id)}
+              />
+              <span
+                className="legend-color"
+                style={{ backgroundColor: type.color }}
+              ></span>
+              {type.label}
+            </label>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

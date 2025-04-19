@@ -40,17 +40,55 @@ let lastCallTime = 0;
 
 // Déterminer le type d'un élément OSM
 function getTypeFromTags(tags: OSMNode['tags']): string {
-  if (tags.amenity === 'restaurant' || tags.amenity === 'cafe' || tags.amenity === 'fast_food') {
+  // Restaurants et lieux pour manger
+  if (tags.amenity === 'restaurant' || tags.amenity === 'cafe' || tags.amenity === 'fast_food' || 
+      tags.amenity === 'bar' || tags.amenity === 'pub' || tags.amenity === 'food_court') {
     return 'restaurant';
-  } else if (tags.amenity === 'hospital' || tags.amenity === 'clinic' || tags.amenity === 'doctors') {
+  } 
+  // Établissements de santé
+  else if (tags.amenity === 'hospital' || tags.amenity === 'clinic' || tags.amenity === 'doctors' || 
+           tags.amenity === 'dentist' || tags.amenity === 'pharmacy' || tags.healthcare) {
     return 'hospital';
-  } else if (tags.amenity === 'school' || tags.amenity === 'university' || tags.amenity === 'college') {
+  } 
+  // Établissements d'éducation
+  else if (tags.amenity === 'school' || tags.amenity === 'university' || tags.amenity === 'college' || 
+           tags.amenity === 'kindergarten' || tags.amenity === 'library') {
     return 'school';
-  } else if (tags.leisure === 'park' || tags.leisure === 'garden') {
+  } 
+  // Espaces verts et loisirs
+  else if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.leisure === 'playground' || 
+           tags.leisure === 'sports_centre' || tags.leisure === 'stadium' || tags.leisure === 'pitch') {
     return 'park';
-  } else if (tags.shop) {
+  } 
+  // Commerces
+  else if (tags.shop) {
     return 'store';
-  } else {
+  }
+  // Transports
+  else if (tags.public_transport || tags.amenity === 'bus_station' || tags.railway === 'station' || 
+           tags.highway === 'bus_stop' || tags.amenity === 'taxi') {
+    return 'transport';
+  }
+  // Services publics
+  else if (tags.amenity === 'police' || tags.amenity === 'fire_station' || tags.amenity === 'post_office' || 
+           tags.amenity === 'townhall' || tags.office === 'government') {
+    return 'public_service';
+  }
+  // Tourisme et culture
+  else if (tags.tourism === 'museum' || tags.tourism === 'gallery' || tags.tourism === 'attraction' || 
+           tags.tourism === 'hotel' || tags.tourism === 'viewpoint' || tags.historic) {
+    return 'tourism';
+  }
+  // Services bancaires
+  else if (tags.amenity === 'bank' || tags.amenity === 'atm') {
+    return 'bank';
+  }
+  // Lieux de culte
+  else if (tags.amenity === 'place_of_worship') {
+    return 'worship';
+  }
+  // Catégorie par défaut
+  else {
     return 'other';
   }
 }
@@ -63,6 +101,11 @@ function generateValueFromType(type: string): number {
     school: 80,
     park: 60,
     store: 50,
+    transport: 75,
+    public_service: 85,
+    tourism: 65,
+    bank: 55,
+    worship: 45,
     other: 30
   };
   
@@ -78,18 +121,59 @@ function buildOverpassQuery(bounds: L.LatLngBounds): string {
   return `
     [out:json];
     (
+      // Restaurants et cafés
       node["amenity"="restaurant"](${bbox});
       node["amenity"="cafe"](${bbox});
       node["amenity"="fast_food"](${bbox});
+      node["amenity"="bar"](${bbox});
+      node["amenity"="pub"](${bbox});
+      
+      // Santé
       node["amenity"="hospital"](${bbox});
       node["amenity"="clinic"](${bbox});
       node["amenity"="doctors"](${bbox});
+      node["amenity"="dentist"](${bbox});
+      node["amenity"="pharmacy"](${bbox});
+      node["healthcare"](${bbox});
+      
+      // Éducation
       node["amenity"="school"](${bbox});
       node["amenity"="university"](${bbox});
       node["amenity"="college"](${bbox});
+      node["amenity"="kindergarten"](${bbox});
+      node["amenity"="library"](${bbox});
+      
+      // Loisirs et espaces verts
       node["leisure"="park"](${bbox});
       node["leisure"="garden"](${bbox});
+      node["leisure"="playground"](${bbox});
+      node["leisure"="sports_centre"](${bbox});
+      
+      // Commerces
       node["shop"](${bbox});
+      
+      // Transports
+      node["public_transport"](${bbox});
+      node["amenity"="bus_station"](${bbox});
+      node["railway"="station"](${bbox});
+      node["highway"="bus_stop"](${bbox});
+      
+      // Services publics
+      node["amenity"="police"](${bbox});
+      node["amenity"="fire_station"](${bbox});
+      node["amenity"="post_office"](${bbox});
+      node["amenity"="townhall"](${bbox});
+      
+      // Tourisme et culture
+      node["tourism"](${bbox});
+      node["historic"](${bbox});
+      
+      // Services bancaires
+      node["amenity"="bank"](${bbox});
+      node["amenity"="atm"](${bbox});
+      
+      // Lieux de culte
+      node["amenity"="place_of_worship"](${bbox});
     );
     out body;
   `;
