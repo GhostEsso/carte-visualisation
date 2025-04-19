@@ -166,7 +166,12 @@ You can deploy this application on Vercel or another hosting service compatible 
 
 ## 📑 Documentation <a name="documentation"></a>
 
-Pour une documentation détaillée des composants de l'application, veuillez consulter le fichier [COMPOSANTS.md](./COMPOSANTS.md).
+L'application est organisée en plusieurs composants principaux :
+- MapComponent : affiche la carte et gère les outils de dessin
+- DataVisualization : visualise les données des points d'intérêt
+- MapLegend : affiche la légende et permet de filtrer les types de points
+- SearchBar : permet la recherche de lieux
+- ZoneInfo : affiche des informations sur la zone sélectionnée
 
 ### Améliorations Récentes
 
