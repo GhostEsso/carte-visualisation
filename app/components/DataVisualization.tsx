@@ -257,6 +257,24 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
     );
   }
   
+  // Afficher un message si aucune donnée n'est disponible
+  if (data.length === 0) {
+    return (
+      <div className="data-visualization">
+        <div className="empty-data-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <h3>Aucune donnée disponible</h3>
+          <p>La zone sélectionnée ne contient aucun point d&apos;intérêt.</p>
+          <p>Essayez de sélectionner une autre zone ou d&apos;agrandir la zone actuelle.</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="data-visualization">
       <div className="data-visualization-header">

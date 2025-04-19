@@ -8,6 +8,28 @@ const generateMockData = (params: ApiParams): ApiData[] => {
   const { bounds, center, radius, coordinates } = params;
   const mockData: ApiData[] = [];
   
+  // Vérifier si la zone est petite/spécifique
+  let isSmallArea = false;
+  
+  if (bounds) {
+    const areaWidth = bounds.getEast() - bounds.getWest();
+    const areaHeight = bounds.getNorth() - bounds.getSouth();
+    isSmallArea = areaWidth < 0.01 && areaHeight < 0.01;
+  } else if (center && radius) {
+    isSmallArea = radius < 200; // Moins de 200 mètres
+  } else if (coordinates && coordinates.length > 2) {
+    // Polygone avec peu de points et zone restreinte
+    isSmallArea = coordinates.length < 5;
+  }
+  
+  // Probabilité que la zone soit vide (50% pour les petites zones)
+  const emptyAreaProbability = isSmallArea ? 0.5 : 0.05;
+  
+  if (Math.random() < emptyAreaProbability) {
+    // Retourner un tableau vide pour simuler une zone sans points d'intérêt
+    return [];
+  }
+  
   // Nombre d'éléments à générer
   const count = Math.floor(Math.random() * 30) + 5;
   
