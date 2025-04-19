@@ -28,7 +28,14 @@ const calculateCircleArea = (radius: number) => {
 
 // Fonction pour calculer la distance entre deux points
 const calculateDistance = (point1: [number, number], point2: [number, number]) => {
-  return L.latLng(point1[0], point1[1]).distanceTo(L.latLng(point2[0], point2[1]));
+  try {
+    const distance = L.latLng(point1[0], point1[1]).distanceTo(L.latLng(point2[0], point2[1]));
+    // Vérifier que la distance est un nombre valide
+    return typeof distance === 'number' && !isNaN(distance) ? distance : 0;
+  } catch (error) {
+    console.error('Erreur lors du calcul de la distance:', error);
+    return 0;
+  }
 };
 
 // Formater les nombres pour l'affichage
