@@ -129,6 +129,35 @@
   justify-content: center;
   align-items: center;
   min-height: 200px;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: var(--box-shadow);
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spinner 1s ease-in-out infinite;
+}
+
+@keyframes spinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 1rem;
+  color: var(--text-color);
+  text-align: center;
 }
 
 .error-message {
@@ -341,9 +370,10 @@ footer {
   border-radius: 8px;
   box-shadow: var(--box-shadow);
   z-index: 1000;
-  padding: 10px 15px;
+  padding: 15px;
   max-width: 300px;
   font-size: 0.9rem;
+  width: 250px;
 }
 
 .zone-info h4 {
@@ -370,8 +400,8 @@ footer {
 /* Styles pour les boutons d'action sur la forme */
 .shape-actions {
   position: absolute;
-  top: 70px;
-  left: 10px;
+  top: 10px;
+  left: 280px;
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -421,12 +451,12 @@ footer {
   
   .zone-info {
     max-width: 250px;
+    width: auto;
   }
   
   .shape-actions {
-    top: 10px;
-    right: 10px;
-    left: auto;
+    top: 150px;
+    left: 10px;
   }
 }
 
@@ -494,13 +524,20 @@ footer {
 }
 
 .search-spinner {
+  position: absolute;
+  right: 12px;
   width: 20px;
   height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-right: 12px;
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-top-color: var(--primary-color);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+}
+
+.search-spinner .loading-spinner {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
 }
 
 .search-clear-button {

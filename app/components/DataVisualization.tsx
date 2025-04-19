@@ -253,7 +253,10 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
   if (loadingState === 'loading') {
     return (
       <div className="data-visualization">
-        <div className="loading-indicator">Chargement des données...</div>
+        <div className="loading-indicator">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Chargement des données...</div>
+        </div>
       </div>
     );
   }

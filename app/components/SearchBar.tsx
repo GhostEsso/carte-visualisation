@@ -205,11 +205,15 @@ const SearchBar = ({ onLocationSelect }: SearchBarProps) => {
           ref={inputRef}
           aria-expanded={showResults}
           aria-autocomplete="list"
+          autoComplete="off"
           aria-controls={showResults ? "search-results" : undefined}
         />
-        {loading ? (
-          <div className="search-spinner" aria-hidden="true"></div>
-        ) : query ? (
+        {loading && (
+          <div className="search-spinner">
+            <div className="loading-spinner"></div>
+          </div>
+        )}
+        {!loading && query && (
           <button 
             className="search-clear-button" 
             onClick={handleClearSearch}
@@ -220,7 +224,7 @@ const SearchBar = ({ onLocationSelect }: SearchBarProps) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-        ) : null}
+        )}
       </div>
       
       {showResults && results.length > 0 && (

@@ -520,7 +520,10 @@ const MapComponent = () => {
       </div>
       
       {loading && !selectedShape && (
-        <div className="loading-indicator">Chargement des points d&apos;intérêt...</div>
+        <div className="loading-indicator">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Chargement des points d&apos;intérêt...</div>
+        </div>
       )}
       
       {selectedShape && <DataVisualization shape={selectedShape} />}
