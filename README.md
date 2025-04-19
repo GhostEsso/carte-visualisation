@@ -15,6 +15,7 @@
     - [Tech Stack](#tech-stack)
     - [Key Features](#key-features)
   - [🚀 Live Demo](#live-demo)
+  - [📸 Screenshots](#screenshots)
 - [💻 Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Setup](#setup)
@@ -82,6 +83,23 @@
 ## 🚀 Live Demo <a name="live-demo"></a>
 
 - [Live Demo](https://carte-visualisation-ok.vercel.app/)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- SCREENSHOTS -->
+
+## 📸 Screenshots <a name="screenshots"></a>
+
+<div align="center">
+  <img src="public/screenshots/map-overview.png" alt="Map Overview" width="80%" />
+  <p>Vue générale de l'application avec la carte et les outils de dessin</p>
+  
+  <img src="public/screenshots/data-visualization.png" alt="Data Visualization" width="80%" />
+  <p>Visualisation des données pour une zone sélectionnée</p>
+  
+  <img src="public/screenshots/charts-view.png" alt="Charts View" width="80%" />
+  <p>Graphiques d'analyse des données géospatiales</p>
+</div>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -228,11 +246,6 @@ If you like this project, please give it a star on GitHub and share it with your
 
   - No, the application requires an internet connection to load map data and perform API requests.
 
-- **How can I add my own data to visualize?**
-
-  - This feature is planned for a future version. Currently, the application uses predefined data.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- LICENSE -->
 
