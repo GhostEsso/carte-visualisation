@@ -172,10 +172,10 @@ You can deploy this application on Vercel or another hosting service compatible 
 
 ## 👥 Authors <a name="authors"></a>
 
-👤 **Essohanam Philippe**
+👤 **Essohanam TAMBANA**
 
 - GitHub: [@GhostEsso](https://github.com/GhostEsso)
-- LinkedIn: [LinkedIn](https://linkedin.com/in/linkedinhandle)
+- LinkedIn: [LinkedIn](https://www.linkedin.com/in/essohanam-tambana/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
