@@ -97,3 +97,48 @@ button:hover {
   margin: 0.25rem 0;
   color: #666;
 }
+
+/* Styles pour le sélecteur de source de données */
+.data-source-selector {
+  display: flex;
+  align-items: center;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.data-source-selector span {
+  margin-right: 1rem;
+  font-weight: 500;
+}
+
+.data-source-toggle {
+  display: flex;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.source-button {
+  background-color: white;
+  color: var(--text-color);
+  border: none;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.source-button.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.source-button:hover:not(.active) {
+  background-color: #e0e0e0;
+}
+
+.source-button:first-child {
+  border-right: 1px solid var(--border-color);
+}

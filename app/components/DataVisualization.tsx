@@ -41,6 +41,7 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
   const [activeView, setActiveView] = useState<'table' | 'chart'>('table');
   const [activeChart, setActiveChart] = useState<'pie' | 'bar' | 'line'>('pie');
   const [cacheStats, setCacheStats] = useState({ size: 0, maxSize: 0, duration: 0 });
+  const [useRealData, setUseRealData] = useState<boolean>(apiCacheService.isUsingOSMApi());
   
   // Récupérer les données en fonction de la forme sélectionnée
   useEffect(() => {
@@ -234,6 +235,17 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
     setTimeout(() => setPagination(prev => ({ ...prev, page: currentPage })), 10);
   };
   
+  // Fonction pour changer la source de données
+  const handleDataSourceChange = (useReal: boolean) => {
+    apiCacheService.setUseOSMApi(useReal);
+    setUseRealData(useReal);
+    
+    // Rafraîchir les données
+    const currentPage = pagination.page;
+    setPagination(prev => ({ ...prev, page: 0 }));
+    setTimeout(() => setPagination(prev => ({ ...prev, page: currentPage })), 10);
+  };
+  
   // Calculer le nombre total de pages
   const totalPages = Math.ceil(pagination.total / pagination.limit);
   
@@ -384,6 +396,27 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
         >
           Vider le cache
         </button>
+      </div>
+      
+      {/* Sélecteur de source de données */}
+      <div className="data-source-selector">
+        <span>Source de données:</span>
+        <div className="data-source-toggle">
+          <button 
+            className={`source-button ${!useRealData ? 'active' : ''}`}
+            onClick={() => handleDataSourceChange(false)}
+            aria-label="Utiliser des données simulées"
+          >
+            Simulées
+          </button>
+          <button 
+            className={`source-button ${useRealData ? 'active' : ''}`}
+            onClick={() => handleDataSourceChange(true)}
+            aria-label="Utiliser des données OpenStreetMap"
+          >
+            OpenStreetMap
+          </button>
+        </div>
       </div>
       
       {/* Statistiques du cache */}

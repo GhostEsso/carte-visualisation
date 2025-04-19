@@ -2,6 +2,7 @@
 
 import { ApiParams, ApiData } from '../types';
 import { throttledFetchData } from './api';
+import { fetchOSMData, clearOSMCache, getOSMCacheStats } from './osm-api';
 
 interface CachedResponse {
   data: ApiData[];
@@ -18,11 +19,13 @@ class ApiCacheService {
   private cache: Map<string, CacheItem>;
   private cacheSize: number;
   private cacheDuration: number; // durée de validité du cache en ms
+  private useOSMApi: boolean; // Utiliser l'API OpenStreetMap au lieu des mock data
 
-  constructor(cacheSize = 50, cacheDuration = 5 * 60 * 1000) { // 5 minutes par défaut
+  constructor(cacheSize = 50, cacheDuration = 5 * 60 * 1000, useOSMApi = true) { // 5 minutes par défaut
     this.cache = new Map();
     this.cacheSize = cacheSize;
     this.cacheDuration = cacheDuration;
+    this.useOSMApi = useOSMApi;
   }
 
   // Génère une clé de cache unique basée sur les paramètres de la requête
@@ -95,7 +98,15 @@ class ApiCacheService {
     
     // Sinon, faire un appel API
     console.log('Appel API pour la requête:', cacheKey);
-    const response = await throttledFetchData(params);
+    
+    let response;
+    
+    // Utiliser l'API OpenStreetMap ou les données mockées selon le paramètre
+    if (this.useOSMApi) {
+      response = await fetchOSMData(params);
+    } else {
+      response = await throttledFetchData(params);
+    }
     
     // Mettre en cache la réponse
     this.cache.set(cacheKey, {
@@ -112,13 +123,31 @@ class ApiCacheService {
     return response;
   }
 
+  // Activer ou désactiver l'utilisation de l'API OSM
+  setUseOSMApi(value: boolean): void {
+    this.useOSMApi = value;
+    this.clearCache(); // Vider le cache lors du changement d'API
+  }
+
+  // Vérifier si l'API OSM est utilisée
+  isUsingOSMApi(): boolean {
+    return this.useOSMApi;
+  }
+
   // Vider le cache
   clearCache(): void {
     this.cache.clear();
+    if (this.useOSMApi) {
+      clearOSMCache();
+    }
   }
 
   // Obtenir des informations sur l'état du cache
   getCacheStats(): { size: number, maxSize: number, duration: number } {
+    if (this.useOSMApi) {
+      return getOSMCacheStats();
+    }
+    
     return {
       size: this.cache.size,
       maxSize: this.cacheSize,

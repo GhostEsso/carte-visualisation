@@ -142,12 +142,13 @@ const MapComponent = () => {
     const fetchInitialPoints = async () => {
       setLoading(true);
       try {
+        // Créer une zone plus large autour du centre pour les points initiaux
         const response = await throttledFetchData({
           bounds: new L.LatLngBounds(
             [mapCenter[0] - 0.05, mapCenter[1] - 0.05],
             [mapCenter[0] + 0.05, mapCenter[1] + 0.05]
           ),
-          pagination: { page: 1, limit: 30 }
+          pagination: { page: 1, limit: 100 } // Augmenter la limite pour récupérer plus de points
         });
         setPointsOfInterest(response.data);
       } catch (error) {
