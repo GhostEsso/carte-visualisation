@@ -11,7 +11,7 @@ export interface DrawnShape {
 }
 
 // Type pour les modes de dessin
-export type DrawMode = 'rectangle' | 'circle' | 'polygon' | null;
+export type DrawMode = 'rectangle' | 'polygon' | null;
 
 // Types pour les états de chargement
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';

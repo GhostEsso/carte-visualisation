@@ -23,6 +23,7 @@
   - [Run tests](#run-tests)
   - [Deployment](#deployment)
 - [👥 Authors](#authors)
+- [📑 Documentation](#documentation)
 - [🔭 Future Features](#future-features)
 - [🤝 Contributing](#contributing)
 - [⭐️ Show your support](#support)
@@ -121,9 +122,9 @@ Install the project dependencies:
 To start the development server, run:
 
 ```sh
-  npm run dev
-  # or
-  yarn dev
+npm run dev
+# or
+yarn dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
@@ -158,6 +159,31 @@ You can deploy this application on Vercel or another hosting service compatible 
 
 - GitHub: [@GhostEsso](https://github.com/GhostEsso)
 - LinkedIn: [LinkedIn](https://linkedin.com/in/linkedinhandle)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- DOCUMENTATION -->
+
+## 📑 Documentation <a name="documentation"></a>
+
+Pour une documentation détaillée des composants de l'application, veuillez consulter le fichier [COMPOSANTS.md](./COMPOSANTS.md).
+
+### Améliorations Récentes
+
+#### Interface Utilisateur
+- Styles améliorés pour les boutons actifs des outils de dessin
+- Indicateurs visuels plus clairs pour les modes de dessin sélectionnés
+- Interface plus intuitive pour la sélection et l'édition des zones
+
+#### Optimisation de l'API OpenStreetMap
+- Mise en place d'un système de cache pour réduire les appels API
+- Désactivation du mode cercle pour éviter les erreurs avec l'API OSM
+- Amélioration du traitement des données géospatiales
+
+#### Corrections de Bugs
+- Correction des filtres de types de points d'intérêt dans la légende
+- Amélioration des calculs d'aire et de périmètre
+- Gestion optimisée des erreurs lors des appels API
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

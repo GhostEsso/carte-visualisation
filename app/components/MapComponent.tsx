@@ -421,13 +421,6 @@ const MapComponent = () => {
           Rectangle
         </button>
         <button
-          className={`control-button circle ${drawMode === 'circle' ? 'active' : ''}`}
-          onClick={() => handleSetDrawMode('circle')}
-          aria-label="Dessiner un cercle"
-        >
-          Cercle
-        </button>
-        <button
           className={`control-button polygon ${drawMode === 'polygon' ? 'active' : ''}`}
           onClick={() => handleSetDrawMode('polygon')}
           aria-label="Dessiner un polygone"
@@ -483,7 +476,7 @@ const MapComponent = () => {
               onEdited={handleEdited}
               draw={{
                 rectangle: drawMode === 'rectangle',
-                circle: drawMode === 'circle',
+                circle: false,
                 polygon: drawMode === 'polygon',
                 polyline: false,
                 circlemarker: false,

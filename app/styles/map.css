@@ -27,11 +27,18 @@
 }
 
 .control-button.active {
-  background-color: #2980b9;
+  background-color: #1a5a87;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+  transform: scale(0.98);
+  font-weight: 600;
 }
 
 .control-button.rectangle {
   background-color: var(--primary-color);
+}
+
+.control-button.rectangle.active {
+  background-color: #2573a7;
 }
 
 .control-button.circle {
@@ -40,6 +47,10 @@
 
 .control-button.polygon {
   background-color: #9b59b6;
+}
+
+.control-button.polygon.active {
+  background-color: #8e44ad;
 }
 
 .control-button.clear {
