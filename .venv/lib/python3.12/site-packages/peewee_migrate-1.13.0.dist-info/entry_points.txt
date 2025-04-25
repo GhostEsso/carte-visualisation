@@ -1,0 +1,4 @@
+[console_scripts]
+pw-migrate=peewee_migrate.cli:cli
+pw_migrate=peewee_migrate.cli:cli
+

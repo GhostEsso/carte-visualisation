@@ -98,35 +98,35 @@ const ZoneInfo = ({ shape }: ZoneInfoProps) => {
     : `${formatNumber(perimeter)} m`;
 
   return (
-    <div className="zone-info">
-      <h4>Informations sur la zone sélectionnée</h4>
-      <div className="zone-info-details">
-        <div className="zone-info-item">
-          <span className="zone-info-label">Type:</span>
-          <span className="zone-info-value">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4">
+      <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Informations sur la zone sélectionnée</h4>
+      <div className="space-y-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-1">
+          <span className="text-sm text-gray-500 dark:text-gray-400">Type:</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">
             {shape.type === 'rectangle' && 'Rectangle'}
             {shape.type === 'circle' && 'Cercle'}
             {shape.type === 'polygon' && 'Polygone'}
           </span>
         </div>
-        <div className="zone-info-item">
-          <span className="zone-info-label">Aire:</span>
-          <span className="zone-info-value">{formattedArea}</span>
+        <div className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-1">
+          <span className="text-sm text-gray-500 dark:text-gray-400">Aire:</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">{formattedArea}</span>
         </div>
-        <div className="zone-info-item">
-          <span className="zone-info-label">
+        <div className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-1">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {shape.type === 'circle' ? 'Circonférence:' : 'Périmètre:'}
           </span>
-          <span className="zone-info-value">{formattedPerimeter}</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">{formattedPerimeter}</span>
         </div>
-        <div className="zone-info-item">
-          <span className="zone-info-label">Centre:</span>
-          <span className="zone-info-value">{center}</span>
+        <div className="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-1">
+          <span className="text-sm text-gray-500 dark:text-gray-400">Centre:</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[180px]">{center}</span>
         </div>
         {shape.type === 'circle' && shape.radius && (
-          <div className="zone-info-item">
-            <span className="zone-info-label">Rayon:</span>
-            <span className="zone-info-value">
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Rayon:</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
               {shape.radius > 1000 
                 ? `${formatNumber(shape.radius / 1000)} km` 
                 : `${formatNumber(shape.radius)} m`}

@@ -1,0 +1,12 @@
+<svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cercle représentant un œil -->
+  <circle cx="25" cy="20" r="12" fill="#0284c7" />
+  <circle cx="25" cy="20" r="5" fill="#ffffff" />
+  <circle cx="25" cy="20" r="2" fill="#0284c7" />
+  
+  <!-- Texte "VISION" -->
+  <text x="45" y="26" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#0284c7">VISION</text>
+  
+  <!-- Ligne décorative -->
+  <path d="M 45 30 L 110 30" stroke="#0284c7" stroke-width="2" stroke-linecap="round" />
+</svg> 

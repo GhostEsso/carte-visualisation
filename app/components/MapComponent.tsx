@@ -8,11 +8,11 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 // Importer GeometryUtil pour les calculs d'aire
 import 'leaflet-geometryutil';
 import { DrawMode, DrawnShape, ApiData } from '../types';
+import { fetchDataWithCache, throttledFetchData } from '../services/api-cache';
 import DataVisualization from './DataVisualization';
 import MapLegend from './MapLegend';
 import ZoneInfo from './ZoneInfo';
 import SearchBar from './SearchBar';
-import { throttledFetchData } from '../services/api';
 
 // Types étendus pour Leaflet
 declare module 'leaflet' {
@@ -69,26 +69,35 @@ interface ShapeActionsProps {
 
 const ShapeActions = ({ onEdit, onCenter, onDelete }: ShapeActionsProps) => {
   return (
-    <div className="shape-actions">
+    <div className="absolute bottom-24 right-4 flex flex-col gap-2 z-[1000] bg-white/90 dark:bg-slate-800/90 p-2 rounded-lg shadow-lg">
       <button 
-        className="shape-action-button action-edit"
+        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded shadow-md transition-colors flex items-center justify-center"
         onClick={onEdit}
         aria-label="Éditer la forme"
       >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
         Éditer
       </button>
       <button 
-        className="shape-action-button action-center"
+        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded shadow-md transition-colors flex items-center justify-center"
         onClick={onCenter}
         aria-label="Centrer sur la forme"
       >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
         Centrer
       </button>
       <button 
-        className="shape-action-button action-delete"
+        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded shadow-md transition-colors flex items-center justify-center"
         onClick={onDelete}
         aria-label="Supprimer la forme"
       >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
         Supprimer
       </button>
     </div>
@@ -131,6 +140,7 @@ const MapComponent = () => {
   const [mapZoom, setMapZoom] = useState(13);
   const [isEditMode, setIsEditMode] = useState(false);
   const [searchLocation, setSearchLocation] = useState<string | null>(null);
+  const [infoCollapsed, setInfoCollapsed] = useState(false);
   
   const mapRef = useRef<L.Map | null>(null);
   const featureGroupRef = useRef<L.FeatureGroup>(null);
@@ -146,16 +156,24 @@ const MapComponent = () => {
       setLoading(true);
       try {
         // Créer une zone plus large autour du centre pour les points initiaux
+        const padding = 0.05; // ~5km à cette latitude
         const response = await throttledFetchData({
           bounds: new L.LatLngBounds(
-            [mapCenter[0] - 0.05, mapCenter[1] - 0.05],
-            [mapCenter[0] + 0.05, mapCenter[1] + 0.05]
+            [mapCenter[0] - padding, mapCenter[1] - padding],
+            [mapCenter[0] + padding, mapCenter[1] + padding]
           ),
           pagination: { page: 1, limit: 100 } // Augmenter la limite pour récupérer plus de points
         });
-        setPointsOfInterest(response.data);
+        
+        if (response && response.data) {
+          setPointsOfInterest(response.data);
+        } else {
+          console.warn('Aucun point d\'intérêt trouvé pour cette zone');
+          setPointsOfInterest([]);
+        }
       } catch (error) {
         console.error('Erreur lors du chargement des points d\'intérêt:', error);
+        setPointsOfInterest([]);
       } finally {
         setLoading(false);
       }
@@ -367,6 +385,8 @@ const MapComponent = () => {
     bounds?: L.LatLngBounds;
     name: string;
   }) => {
+    setLoading(true);
+    
     // Définir le centre de la carte et le niveau de zoom
     setMapCenter(location.center);
     
@@ -387,6 +407,35 @@ const MapComponent = () => {
       featureGroupRef.current.clearLayers();
       setSelectedShape(null);
     }
+    
+    // Charger les nouveaux points d'intérêt pour cette zone
+    const fetchPointsForLocation = async () => {
+      try {
+        // Créer une zone plus large autour du centre pour récupérer les points
+        const padding = 0.05; // ~5km d'extension autour du point
+        const response = await throttledFetchData({
+          bounds: location.bounds || new L.LatLngBounds(
+            [location.center[0] - padding, location.center[1] - padding],
+            [location.center[0] + padding, location.center[1] + padding]
+          ),
+          pagination: { page: 1, limit: 150 }
+        });
+        
+        if (response && response.data) {
+          setPointsOfInterest(response.data);
+        } else {
+          console.warn('Aucun point d\'intérêt trouvé pour cette recherche');
+          setPointsOfInterest([]);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des points d\'intérêt pour la recherche:', error);
+        setPointsOfInterest([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchPointsForLocation();
   };
   
   // Mettre à jour la référence de la carte
@@ -400,35 +449,45 @@ const MapComponent = () => {
       <SearchBar onLocationSelect={handleLocationSelect} />
       
       {searchLocation && (
-        <div className="search-location-info">
-          Lieu sélectionné: <strong>{searchLocation}</strong>
+        <div className="flex items-center p-2 mb-3 bg-gray-50 dark:bg-slate-700 rounded text-sm">
+          Lieu sélectionné: <strong className="mx-1">{searchLocation}</strong>
           <button 
-            className="search-location-clear"
+            className="ml-2 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 focus:outline-none"
             onClick={() => setSearchLocation(null)}
             aria-label="Effacer le lieu"
           >
-            ×
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
       )}
       
-      <div className="controls-container">
+      <div className="flex flex-wrap gap-2 mb-4 mt-6">
         <button
-          className={`control-button rectangle ${drawMode === 'rectangle' ? 'active' : ''}`}
+          className={`px-4 py-2 text-sm font-medium rounded text-white transition-colors ${
+            drawMode === 'rectangle' 
+              ? 'bg-primary-700' 
+              : 'bg-primary-600 hover:bg-primary-700'
+          }`}
           onClick={() => handleSetDrawMode('rectangle')}
           aria-label="Dessiner un rectangle"
         >
           Rectangle
         </button>
         <button
-          className={`control-button polygon ${drawMode === 'polygon' ? 'active' : ''}`}
+          className={`px-4 py-2 text-sm font-medium rounded text-white transition-colors ${
+            drawMode === 'polygon' 
+              ? 'bg-purple-700' 
+              : 'bg-purple-600 hover:bg-purple-700'
+          }`}
           onClick={() => handleSetDrawMode('polygon')}
           aria-label="Dessiner un polygone"
         >
           Polygone
         </button>
         <button
-          className="control-button clear"
+          className="px-4 py-2 text-sm font-medium rounded text-white bg-red-600 hover:bg-red-700 transition-colors"
           onClick={handleClearShapes}
           aria-label="Effacer les formes"
         >
@@ -436,7 +495,7 @@ const MapComponent = () => {
         </button>
       </div>
       
-      <div className="map-container">
+      <div className="relative w-full h-[70vh] rounded-lg overflow-hidden shadow-md mb-6">
         <MapContainer
           center={mapCenter}
           zoom={mapZoom}
@@ -493,14 +552,38 @@ const MapComponent = () => {
             />
           </FeatureGroup>
           
+          {/* Afficher les informations sur la zone sélectionnée au-dessus de la légende */}
+          {selectedShape && (
+            <div className="leaflet-top leaflet-right" style={{ marginTop: '60px', marginRight: '10px', zIndex: 1000 }}>
+              <div className="leaflet-control bg-white/95 dark:bg-slate-800/95 p-2 rounded-lg shadow-sm max-w-[200px]">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-medium text-sm">Zone sélectionnée</span>
+                  <button 
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-0.5 rounded"
+                    onClick={() => setInfoCollapsed(!infoCollapsed)}
+                    aria-label={infoCollapsed ? "Développer" : "Réduire"}
+                  >
+                    {infoCollapsed ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {!infoCollapsed && <ZoneInfo shape={selectedShape} />}
+              </div>
+            </div>
+          )}
+          
           {/* Légende de la carte */}
           <MapLegend onFilterChange={handleFilterChange} />
           
           <MapController center={mapCenter} zoom={mapZoom} setMapRef={setMapRef} />
         </MapContainer>
-        
-        {/* Afficher les informations sur la zone sélectionnée */}
-        {selectedShape && <ZoneInfo shape={selectedShape} />}
         
         {/* Afficher les actions sur la forme sélectionnée */}
         {selectedShape && !isEditMode && (
@@ -513,9 +596,16 @@ const MapComponent = () => {
       </div>
       
       {loading && !selectedShape && (
-        <div className="loading-indicator">
-          <div className="loading-spinner"></div>
-          <div className="loading-text">Chargement des points d&apos;intérêt...</div>
+        <div className="flex items-center justify-center p-6 bg-white/90 dark:bg-slate-800/90 rounded-lg shadow-md">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="animate-spin-slow h-10 w-10 text-primary-500">
+              <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+            <div className="text-gray-600 dark:text-gray-300">Chargement des points d&apos;intérêt...</div>
+          </div>
         </div>
       )}
       

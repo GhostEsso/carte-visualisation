@@ -1,0 +1,24 @@
+/* Corrections pour les interactions avec Leaflet */
+
+/* S'assurer que nos composants personnalisés s'affichent au-dessus des contrôles Leaflet */
+.leaflet-pane {
+  z-index: 400 !important;
+}
+
+.leaflet-top, 
+.leaflet-bottom {
+  z-index: 900 !important;
+}
+
+/* Augmenter le z-index pour nos overlays personnalisés */
+.map-custom-overlay {
+  z-index: 1000 !important;
+  position: absolute;
+}
+
+/* Assurer la visibilité de la légende */
+.leaflet-container .map-legend-container {
+  position: absolute !important;
+  z-index: 1000 !important;
+  pointer-events: auto !important;
+} 

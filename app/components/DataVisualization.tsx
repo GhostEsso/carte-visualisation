@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import { DrawnShape, ApiData, LoadingState, FilterOptions, PaginationOptions } from '../types';
 import { fetchDataWithCache } from '../services/api-cache';
 import { exportData } from '../utils/export';
 import { apiCacheService } from '../services/api-cache';
+import useClickOutside from '../hooks/useClickOutside';
 
 // Enregistrement des composants ChartJS nécessaires
 ChartJS.register(
@@ -41,7 +42,11 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
   const [activeView, setActiveView] = useState<'table' | 'chart'>('table');
   const [activeChart, setActiveChart] = useState<'pie' | 'bar' | 'line'>('pie');
   const [cacheStats, setCacheStats] = useState({ size: 0, maxSize: 0, duration: 0 });
-  const [useRealData, setUseRealData] = useState<boolean>(apiCacheService.isUsingOSMApi());
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Fermer le menu d'exportation lorsqu'on clique en dehors
+  useClickOutside(exportMenuRef, () => setShowExportMenu(false));
   
   // Récupérer les données en fonction de la forme sélectionnée
   useEffect(() => {
@@ -235,27 +240,21 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
     setTimeout(() => setPagination(prev => ({ ...prev, page: currentPage })), 10);
   };
   
-  // Fonction pour changer la source de données
-  const handleDataSourceChange = (useReal: boolean) => {
-    apiCacheService.setUseOSMApi(useReal);
-    setUseRealData(useReal);
-    
-    // Rafraîchir les données
-    const currentPage = pagination.page;
-    setPagination(prev => ({ ...prev, page: 0 }));
-    setTimeout(() => setPagination(prev => ({ ...prev, page: currentPage })), 10);
-  };
-  
   // Calculer le nombre total de pages
   const totalPages = Math.ceil(pagination.total / pagination.limit);
   
   // Afficher l'indicateur de chargement
   if (loadingState === 'loading') {
     return (
-      <div className="data-visualization">
-        <div className="loading-indicator">
-          <div className="loading-spinner"></div>
-          <div className="loading-text">Chargement des données...</div>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin-slow h-12 w-12 text-primary-500 mb-4">
+            <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+          <div className="text-gray-600 dark:text-gray-300 text-lg">Chargement des données...</div>
         </div>
       </div>
     );
@@ -264,9 +263,20 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
   // Afficher le message d'erreur
   if (loadingState === 'error') {
     return (
-      <div className="data-visualization">
-        <div className="error-message">
-          <strong>Erreur:</strong> {error}
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 text-red-500">
+              <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700 dark:text-red-300">
+                <strong className="font-medium">Erreur:</strong> {error}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -275,72 +285,151 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
   // Afficher un message si aucune donnée n'est disponible
   if (data.length === 0) {
     return (
-      <div className="data-visualization">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
         <div className="empty-data-message">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
-          <h3>Aucune donnée disponible</h3>
-          <p>La zone sélectionnée ne contient aucun point d&apos;intérêt.</p>
-          <p>Essayez de sélectionner une autre zone ou d&apos;agrandir la zone actuelle.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Aucune donnée disponible</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">La zone sélectionnée ne contient aucun point d&apos;intérêt.</p>
+          <p className="text-gray-500 dark:text-gray-400">Essayez de sélectionner une autre zone ou d&apos;agrandir la zone actuelle.</p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="data-visualization">
-      <div className="data-visualization-header">
-        <h2>Données pour la zone sélectionnée ({pagination.total} points)</h2>
-        <div className="controls-container">
-          <button
-            className={`control-button ${activeView === 'table' ? 'active' : ''}`}
-            onClick={() => setActiveView('table')}
-            aria-label="Afficher en tableau"
-          >
-            Tableau
-          </button>
-          <button
-            className={`control-button ${activeView === 'chart' ? 'active' : ''}`}
-            onClick={() => setActiveView('chart')}
-            aria-label="Afficher en graphique"
-          >
-            Graphiques
-          </button>
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-0">
+          Données pour la zone sélectionnée ({pagination.total} points)
+        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between">
+          <div className="flex gap-2 mb-2 sm:mb-0">
+            <button
+              onClick={() => setActiveView('table')}
+              className={`px-3 py-1 text-sm rounded ${
+                activeView === 'table'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300'
+              }`}
+              aria-label="Affichage en tableau"
+            >
+              Tableau
+            </button>
+            <button
+              onClick={() => setActiveView('chart')}
+              className={`px-3 py-1 text-sm rounded ${
+                activeView === 'chart'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300'
+              }`}
+              aria-label="Affichage en graphique"
+            >
+              Graphique
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">
+              Cache: {cacheStats.size}/{cacheStats.maxSize}
+            </span>
+            <button
+              onClick={handleClearCache}
+              className="px-3 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300"
+              aria-label="Vider le cache"
+            >
+              Vider cache
+            </button>
+            <div className="dropdown relative">
+              <button
+                className="px-3 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 flex items-center"
+                aria-expanded={showExportMenu}
+                aria-haspopup="true"
+                aria-label="Exporter les données"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+              >
+                Exporter
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showExportMenu && (
+                <div ref={exportMenuRef} className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 shadow-lg rounded-md overflow-hidden z-10 py-1">
+                  <button 
+                    onClick={() => {
+                      handleExport('csv');
+                      setShowExportMenu(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  >
+                    Exporter en CSV
+                  </button>
+                  <button 
+                    onClick={() => {
+                      handleExport('json');
+                      setShowExportMenu(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  >
+                    Exporter en JSON
+                  </button>
+                  <button 
+                    onClick={() => {
+                      handleExport('geojson');
+                      setShowExportMenu(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  >
+                    Exporter en GeoJSON
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       
-      <div className="filters">
-        <label>
-          Trier par:
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="flex flex-col">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Trier par:
+          </label>
           <select
             value={filters.sortBy as string}
             onChange={(e) => handleFilterChange('sortBy', e.target.value as keyof ApiData)}
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 px-3 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50 text-gray-900 dark:text-white"
           >
             <option value="name">Nom</option>
             <option value="value">Valeur</option>
             <option value="type">Type</option>
           </select>
-        </label>
+        </div>
         
-        <label>
-          Ordre:
+        <div className="flex flex-col">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Ordre:
+          </label>
           <select
             value={filters.sortOrder}
             onChange={(e) => handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')}
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 px-3 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50 text-gray-900 dark:text-white"
           >
             <option value="asc">Ascendant</option>
             <option value="desc">Descendant</option>
           </select>
-        </label>
+        </div>
         
-        <label>
-          Type:
+        <div className="flex flex-col">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Type:
+          </label>
           <select
             value={filters.type || ''}
             onChange={(e) => handleFilterChange('type', e.target.value || undefined)}
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 px-3 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50 text-gray-900 dark:text-white"
           >
             <option value="">Tous</option>
             <option value="restaurant">Restaurant</option>
@@ -349,10 +438,12 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
             <option value="park">Parc</option>
             <option value="store">Magasin</option>
           </select>
-        </label>
+        </div>
         
-        <label>
-          Éléments par page:
+        <div className="flex flex-col">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Éléments par page:
+          </label>
           <select
             value={pagination.limit}
             onChange={(e) => setPagination(prev => ({ 
@@ -360,108 +451,59 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
               limit: parseInt(e.target.value), 
               page: 1 
             }))}
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 py-2 px-3 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-500 focus:ring-opacity-50 text-gray-900 dark:text-white"
           >
             <option value="5">5</option>
             <option value="10">10</option>
             <option value="20">20</option>
             <option value="50">50</option>
           </select>
-        </label>
-      </div>
-      
-      {/* Boutons d'exportation */}
-      <div className="export-container">
-        <button 
-          className="export-button"
-          onClick={() => handleExport('csv')}
-          aria-label="Exporter en CSV"
-        >
-          Exporter en CSV
-        </button>
-        <button 
-          className="export-button"
-          onClick={() => handleExport('json')}
-          aria-label="Exporter en JSON"
-        >
-          Exporter en JSON
-        </button>
-        <button 
-          className="export-button"
-          onClick={() => handleExport('geojson')}
-          aria-label="Exporter en GeoJSON"
-        >
-          Exporter en GeoJSON
-        </button>
-        <button 
-          className="export-button"
-          onClick={handleClearCache}
-          aria-label="Vider le cache"
-        >
-          Vider le cache
-        </button>
-      </div>
-      
-      {/* Sélecteur de source de données */}
-      <div className="data-source-selector">
-        <span>Source de données:</span>
-        <div className="data-source-toggle">
-          <button 
-            className={`source-button ${!useRealData ? 'active' : ''}`}
-            onClick={() => handleDataSourceChange(false)}
-            aria-label="Utiliser des données simulées"
-          >
-            Simulées
-          </button>
-          <button 
-            className={`source-button ${useRealData ? 'active' : ''}`}
-            onClick={() => handleDataSourceChange(true)}
-            aria-label="Utiliser des données OpenStreetMap"
-          >
-            OpenStreetMap
-          </button>
         </div>
-      </div>
-      
-      {/* Statistiques du cache */}
-      <div className="cache-stats">
-        Cache: {cacheStats.size} / {cacheStats.maxSize} entrées, validité: {cacheStats.duration / 1000 / 60} minutes
       </div>
       
       {activeView === 'table' ? (
         <>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Type</th>
-                <th>Valeur</th>
-                <th>Coordonnées</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.length > 0 ? data.map(item => (
-                <tr key={item.id}>
-                  <td>{item.name}</td>
-                  <td>{item.type}</td>
-                  <td>{item.value}</td>
-                  <td>
-                    {item.coordinates[0].toFixed(4)}, {item.coordinates[1].toFixed(4)}
-                  </td>
-                </tr>
-              )) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-slate-700">
                 <tr>
-                  <td colSpan={4}>Aucune donnée trouvée pour cette zone.</td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nom</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Valeur</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Coordonnées</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {data.length > 0 ? data.map(item => (
+                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-slate-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{item.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{item.type}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{item.value}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {item.coordinates[0].toFixed(4)}, {item.coordinates[1].toFixed(4)}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                      Aucune donnée trouvée pour cette zone.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           
           {totalPages > 1 && (
-            <div className="pagination">
+            <div className="flex items-center justify-center space-x-1 mt-4">
               <button
                 onClick={() => handlePageChange(pagination.page - 1)}
                 disabled={pagination.page === 1}
-                className="pagination-button"
+                className={`px-3 py-1 rounded text-sm ${
+                  pagination.page === 1 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-700 dark:text-gray-500' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'
+                }`}
               >
                 Précédent
               </button>
@@ -472,19 +514,27 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
                   <button
                     key={pageNumber}
                     onClick={() => handlePageChange(pageNumber)}
-                    className={`pagination-button ${pagination.page === pageNumber ? 'active' : ''}`}
+                    className={`w-8 h-8 flex items-center justify-center rounded text-sm ${
+                      pagination.page === pageNumber
+                        ? 'bg-primary-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'
+                    }`}
                   >
                     {pageNumber}
                   </button>
                 );
               })}
               
-              {totalPages > 5 && <span>...</span>}
+              {totalPages > 5 && <span className="text-gray-500 dark:text-gray-400">...</span>}
               
               <button
                 onClick={() => handlePageChange(pagination.page + 1)}
                 disabled={pagination.page === totalPages}
-                className="pagination-button"
+                className={`px-3 py-1 rounded text-sm ${
+                  pagination.page === totalPages 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-700 dark:text-gray-500' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'
+                }`}
               >
                 Suivant
               </button>
@@ -492,30 +542,44 @@ const DataVisualization = ({ shape }: DataVisualizationProps) => {
           )}
         </>
       ) : (
-        <div className="charts-container">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
           {/* Sélecteur de type de graphique */}
-          <div className="chart-type-selector">
-            <button 
-              className={`chart-button ${activeChart === 'pie' ? 'active' : ''}`}
-              onClick={() => setActiveChart('pie')}
-            >
-              Camembert
-            </button>
-            <button 
-              className={`chart-button ${activeChart === 'bar' ? 'active' : ''}`}
-              onClick={() => setActiveChart('bar')}
-            >
-              Barres
-            </button>
-            <button 
-              className={`chart-button ${activeChart === 'line' ? 'active' : ''}`}
-              onClick={() => setActiveChart('line')}
-            >
-              Ligne
-            </button>
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex rounded-md shadow-sm" role="group">
+              <button 
+                className={`px-4 py-2 text-sm font-medium rounded-l-lg border border-gray-200 dark:border-gray-600 ${
+                  activeChart === 'pie'
+                    ? 'bg-primary-600 text-white border-primary-600 dark:border-primary-600'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'
+                }`}
+                onClick={() => setActiveChart('pie')}
+              >
+                Camembert
+              </button>
+              <button 
+                className={`px-4 py-2 text-sm font-medium border-t border-b border-gray-200 dark:border-gray-600 ${
+                  activeChart === 'bar'
+                    ? 'bg-primary-600 text-white border-primary-600 dark:border-primary-600'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'
+                }`}
+                onClick={() => setActiveChart('bar')}
+              >
+                Barres
+              </button>
+              <button 
+                className={`px-4 py-2 text-sm font-medium rounded-r-lg border border-gray-200 dark:border-gray-600 ${
+                  activeChart === 'line'
+                    ? 'bg-primary-600 text-white border-primary-600 dark:border-primary-600'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'
+                }`}
+                onClick={() => setActiveChart('line')}
+              >
+                Ligne
+              </button>
+            </div>
           </div>
           
-          <div style={{ height: '400px', marginTop: '1rem' }}>
+          <div className="h-96 mt-4">
             {activeChart === 'pie' && (
               <Pie data={generatePieChartData()} options={chartOptions} />
             )}

@@ -187,7 +187,15 @@ export async function fetchOSMData(params: ApiParams): Promise<{
   const { bounds, filters, pagination } = params;
   
   if (!bounds) {
-    throw new Error('Les limites de la zone sont requises pour interroger OpenStreetMap');
+    console.error('Les limites de la zone sont requises pour interroger OpenStreetMap');
+    return { data: [], total: 0 };
+  }
+  
+  // Vérifier si les limites sont valides
+  if (isNaN(bounds.getNorth()) || isNaN(bounds.getSouth()) || 
+      isNaN(bounds.getEast()) || isNaN(bounds.getWest())) {
+    console.error('Limites de zone invalides:', bounds);
+    return { data: [], total: 0 };
   }
   
   // Générer la clé de cache
@@ -223,92 +231,120 @@ export async function fetchOSMData(params: ApiParams): Promise<{
     await new Promise(resolve => setTimeout(resolve, THROTTLE_DELAY - timeSinceLastCall));
   }
   
-  try {
-    // Construire la requête
-    const query = buildOverpassQuery(bounds);
-    
-    // Faire l'appel API
-    console.log('Appel à l\'API OpenStreetMap');
-    lastCallTime = Date.now();
-    const response = await fetch(`${OVERPASS_API_URL}?data=${encodeURIComponent(query)}`);
-    
-    if (!response.ok) {
-      throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
-    }
-    
-    const osmData: OSMResponse = await response.json();
-    
-    // Transformer les données OSM au format de l'application
-    let transformedData: ApiData[] = osmData.elements.map(element => ({
-      id: `osm-${element.id}`,
-      name: element.tags.name || `Point d'intérêt à ${element.lat.toFixed(5)}, ${element.lon.toFixed(5)}`,
-      description: Object.entries(element.tags)
-        .filter(([key]) => !['name'].includes(key))
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', '),
-      coordinates: [element.lat, element.lon],
-      type: getTypeFromTags(element.tags),
-      value: generateValueFromType(getTypeFromTags(element.tags))
-    }));
-    
-    // Appliquer les filtres si nécessaire
-    if (filters) {
-      const { type, sortBy, sortOrder } = filters;
+  let retryCount = 0;
+  const maxRetries = 2;
+  
+  while (retryCount <= maxRetries) {
+    try {
+      // Construire la requête
+      const query = buildOverpassQuery(bounds);
       
-      if (type) {
-        transformedData = transformedData.filter(item => item.type === type);
+      // Faire l'appel API
+      console.log(`Appel à l'API OpenStreetMap (tentative ${retryCount + 1}/${maxRetries + 1})`);
+      lastCallTime = Date.now();
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // Timeout de 20 secondes
+      
+      const response = await fetch(`${OVERPASS_API_URL}?data=${encodeURIComponent(query)}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
       }
       
-      if (sortBy) {
-        transformedData.sort((a, b) => {
-          const valA = a[sortBy];
-          const valB = b[sortBy];
-          
-          if (typeof valA === 'string' && typeof valB === 'string') {
+      const osmData: OSMResponse = await response.json();
+      
+      // Transformer les données OSM au format de l'application
+      let transformedData: ApiData[] = osmData.elements
+        .filter(element => element && typeof element.lat === 'number' && typeof element.lon === 'number')
+        .map(element => ({
+          id: `osm-${element.id}`,
+          name: element.tags.name || `Point d'intérêt à ${element.lat.toFixed(5)}, ${element.lon.toFixed(5)}`,
+          description: Object.entries(element.tags)
+            .filter(([key]) => !['name'].includes(key))
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', '),
+          coordinates: [element.lat, element.lon],
+          type: getTypeFromTags(element.tags),
+          value: generateValueFromType(getTypeFromTags(element.tags))
+        }));
+      
+      // Appliquer les filtres si nécessaire
+      if (filters) {
+        const { type, sortBy, sortOrder } = filters;
+        
+        if (type) {
+          transformedData = transformedData.filter(item => item.type === type);
+        }
+        
+        if (sortBy) {
+          transformedData.sort((a, b) => {
+            const valA = a[sortBy as keyof ApiData];
+            const valB = b[sortBy as keyof ApiData];
+            
+            if (typeof valA === 'string' && typeof valB === 'string') {
+              return sortOrder === 'asc' 
+                ? valA.localeCompare(valB) 
+                : valB.localeCompare(valA);
+            }
+            
             return sortOrder === 'asc' 
-              ? valA.localeCompare(valB) 
-              : valB.localeCompare(valA);
-          }
-          
-          return sortOrder === 'asc' 
-            ? (valA as number) - (valB as number) 
-            : (valB as number) - (valA as number);
-        });
+              ? (valA as number) - (valB as number) 
+              : (valB as number) - (valA as number);
+          });
+        }
       }
-    }
-    
-    // Mettre en cache les données complètes
-    apiCache.set(cacheKey, {
-      data: transformedData,
-      total: transformedData.length,
-      timestamp: Date.now()
-    });
-    
-    // Appliquer la pagination si nécessaire et retourner
-    if (pagination) {
-      const { page, limit } = pagination;
-      const startIndex = (page - 1) * limit;
-      const paginatedData = transformedData.slice(startIndex, startIndex + limit);
+      
+      // Mettre en cache les données complètes
+      apiCache.set(cacheKey, {
+        data: transformedData,
+        total: transformedData.length,
+        timestamp: Date.now()
+      });
+      
+      // Appliquer la pagination si nécessaire et retourner
+      if (pagination) {
+        const { page, limit } = pagination;
+        const startIndex = (page - 1) * limit;
+        const paginatedData = transformedData.slice(startIndex, startIndex + limit);
+        
+        return {
+          data: paginatedData,
+          total: transformedData.length
+        };
+      }
       
       return {
-        data: paginatedData,
+        data: transformedData,
         total: transformedData.length
       };
+    } catch (error) {
+      console.error(`Erreur lors de la récupération des données OSM (tentative ${retryCount + 1}/${maxRetries + 1}):`, error);
+      
+      retryCount++;
+      
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.warn('Requête interrompue pour cause de timeout');
+      }
+      
+      if (retryCount <= maxRetries) {
+        // Attendre un délai exponentiel avant de réessayer
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log(`Nouvelle tentative dans ${delay/1000} secondes...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        // En cas d'erreur persistante, retourner un tableau vide
+        return { data: [], total: 0 };
+      }
     }
-    
-    return {
-      data: transformedData,
-      total: transformedData.length
-    };
-  } catch (error) {
-    console.error('Erreur lors de la récupération des données OSM:', error);
-    
-    // En cas d'erreur, retourner un tableau vide
-    return {
-      data: [],
-      total: 0
-    };
   }
+  
+  // Si toutes les tentatives ont échoué
+  return { data: [], total: 0 };
 }
 
 // Vider le cache

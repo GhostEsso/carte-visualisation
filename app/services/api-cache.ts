@@ -1,7 +1,6 @@
 'use client';
 
 import { ApiParams, ApiData } from '../types';
-import { throttledFetchData } from './api';
 import { fetchOSMData, clearOSMCache, getOSMCacheStats } from './osm-api';
 
 interface CachedResponse {
@@ -19,13 +18,11 @@ class ApiCacheService {
   private cache: Map<string, CacheItem>;
   private cacheSize: number;
   private cacheDuration: number; // durée de validité du cache en ms
-  private useOSMApi: boolean; // Utiliser l'API OpenStreetMap au lieu des mock data
 
-  constructor(cacheSize = 50, cacheDuration = 5 * 60 * 1000, useOSMApi = true) { // 5 minutes par défaut
+  constructor(cacheSize = 50, cacheDuration = 5 * 60 * 1000) { // 5 minutes par défaut
     this.cache = new Map();
     this.cacheSize = cacheSize;
     this.cacheDuration = cacheDuration;
-    this.useOSMApi = useOSMApi;
   }
 
   // Génère une clé de cache unique basée sur les paramètres de la requête
@@ -99,14 +96,8 @@ class ApiCacheService {
     // Sinon, faire un appel API
     console.log('Appel API pour la requête:', cacheKey);
     
-    let response;
-    
-    // Utiliser l'API OpenStreetMap ou les données mockées selon le paramètre
-    if (this.useOSMApi) {
-      response = await fetchOSMData(params);
-    } else {
-      response = await throttledFetchData(params);
-    }
+    // Appel à l'API OpenStreetMap
+    const response = await fetchOSMData(params);
     
     // Mettre en cache la réponse
     this.cache.set(cacheKey, {
@@ -123,36 +114,20 @@ class ApiCacheService {
     return response;
   }
 
-  // Activer ou désactiver l'utilisation de l'API OSM
-  setUseOSMApi(value: boolean): void {
-    this.useOSMApi = value;
-    this.clearCache(); // Vider le cache lors du changement d'API
-  }
-
-  // Vérifier si l'API OSM est utilisée
+  // Vérifier si l'API OSM est utilisée (toujours vrai maintenant)
   isUsingOSMApi(): boolean {
-    return this.useOSMApi;
+    return true;
   }
 
   // Vider le cache
   clearCache(): void {
     this.cache.clear();
-    if (this.useOSMApi) {
-      clearOSMCache();
-    }
+    clearOSMCache();
   }
 
   // Obtenir des informations sur l'état du cache
   getCacheStats(): { size: number, maxSize: number, duration: number } {
-    if (this.useOSMApi) {
-      return getOSMCacheStats();
-    }
-    
-    return {
-      size: this.cache.size,
-      maxSize: this.cacheSize,
-      duration: this.cacheDuration
-    };
+    return getOSMCacheStats();
   }
 }
 
@@ -162,4 +137,30 @@ export const apiCacheService = new ApiCacheService();
 // Fonction pratique pour récupérer des données avec mise en cache
 export const fetchDataWithCache = async (params: ApiParams): Promise<{ data: ApiData[], total: number }> => {
   return apiCacheService.fetchData(params);
+}; 
+
+// Fonction throttled pour limiter les appels trop fréquents
+// Utile pour les opérations comme le déplacement de carte
+let throttleTimer: number | null = null;
+const throttleDelay = 500; // 500ms de délai entre les appels
+
+export const throttledFetchData = async (params: ApiParams): Promise<{ data: ApiData[], total: number }> => {
+  return new Promise((resolve, reject) => {
+    // Annuler tout timer existant
+    if (throttleTimer !== null) {
+      clearTimeout(throttleTimer);
+    }
+    
+    // Créer un nouveau timer
+    throttleTimer = window.setTimeout(async () => {
+      try {
+        const result = await fetchDataWithCache(params);
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      } finally {
+        throttleTimer = null;
+      }
+    }, throttleDelay);
+  });
 }; 

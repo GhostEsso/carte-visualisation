@@ -4,10 +4,11 @@ import React from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import "./styles/map.css";
+import "./styles/leaflet-fixes.css";
 
 export const metadata: Metadata = {
-  title: "Visualisation de Données Cartographiques",
-  description: "Application de visualisation de données basée sur une carte",
+  title: "Vision | Visualisation de Données Cartographiques",
+  description: "Vision - Application de visualisation de données géospatiales basée sur une carte",
 };
 
 export default function RootLayout({
@@ -16,8 +17,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
+    <html lang="fr" className="h-full">
       <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link
           rel="stylesheet"
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -25,15 +27,17 @@ export default function RootLayout({
           crossOrigin=""
         />
         <link 
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
       <body
-        className="font-inter"
+        className="font-sans antialiased text-gray-900 bg-gray-50 dark:bg-slate-900 dark:text-white min-h-full"
         suppressHydrationWarning={true}
       >
-        {children}
+        <div className="flex flex-col min-h-screen">
+          {children}
+        </div>
       </body>
     </html>
   );
