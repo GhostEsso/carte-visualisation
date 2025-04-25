@@ -1,4 +1,0 @@
-model: anthropic/claude-3   # Remplace par la version de Claude que tu veux utiliser
-providers:
-  anthropic:
-    api_key: "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"
