@@ -1,6 +1,10 @@
 import { LatLngBounds, LatLngTuple, LatLng } from 'leaflet';
 
 // Types pour les formes dessinées
+/**
+ * Représente une forme géométrique dessinée sur la carte (Rectangle, Polygone, etc.).
+ * Contient toutes les informations géospatiales nécessaires pour interroger l'API.
+ */
 export interface DrawnShape {
   id: string;
   type: 'rectangle' | 'circle' | 'polygon';
@@ -17,14 +21,21 @@ export type DrawMode = 'rectangle' | 'polygon' | null;
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
 // Types pour les données récupérées (à adapter selon l'API utilisée)
+/**
+ * Interface normalisée pour les données récupérées depuis l'API (ex: Overpass).
+ * Standardise les POI (Points of Interest) pour l'affichage dans l'application.
+ */
 export interface ApiData {
   id: string;
   name: string;
   description?: string;
-  value: number;
+  value: number; // Valeur arbitraire d'importance ou statistique
   coordinates: LatLngTuple;
-  type: string;
-  // Autres propriétés selon l'API
+  type: string; // Type du lieu (restaurant, école, etc.)
+  // Informations de contact
+  phone?: string;
+  email?: string;
+  website?: string;
 }
 
 // Configuration pour les filtres
@@ -44,6 +55,10 @@ export interface PaginationOptions {
 }
 
 // Paramètres pour les appels API
+/**
+ * Arguments passés aux services pour récupérer les données.
+ * Combine géographie, filtres et pagination.
+ */
 export interface ApiParams {
   bounds?: LatLngBounds;
   center?: LatLng;
