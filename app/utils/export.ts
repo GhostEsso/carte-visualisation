@@ -18,12 +18,13 @@ export const convertToCSV = (data: ApiData[]): string => {
       .map(header => {
         const value = item[header as keyof ApiData];
         
-        // Gérer les types spéciaux (arrays, objects) et échapper les chaînes contenant des virgules
+        // Gérer les types spéciaux (arrays, objects) et mettre entre guillemets les chaînes
+        // contenant un séparateur, un guillemet ou un saut de ligne (RFC 4180)
         if (Array.isArray(value)) {
           return `"${value.join(' ')}"`;
         } else if (typeof value === 'object') {
           return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-        } else if (typeof value === 'string' && value.includes(',')) {
+        } else if (typeof value === 'string' && /[",\r\n]/.test(value)) {
           return `"${value.replace(/"/g, '""')}"`;
         }
         
@@ -89,7 +90,8 @@ export const exportData = (data: ApiData[], format: 'csv' | 'json' | 'geojson', 
   
   switch (format) {
     case 'csv':
-      content = convertToCSV(data);
+      // BOM UTF-8 : sans lui, Excel affiche mal les accents
+      content = '\uFEFF' + convertToCSV(data);
       mimeType = 'text/csv;charset=utf-8';
       defaultFileName += '.csv';
       break;

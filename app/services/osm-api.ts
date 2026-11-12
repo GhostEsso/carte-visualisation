@@ -7,11 +7,11 @@ import { ApiData, ApiParams } from '../types';
 const OVERPASS_API_URL = process.env.NEXT_PUBLIC_OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter';
 const API_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const THROTTLE_DELAY = 1000; // 1 seconde entre les appels
+const MAX_CACHE_ENTRIES = 100; // Nombre maximal d'entrées dans le cache
 
-// Cache pour les résultats de l'API
+// Cache pour les résultats de l'API (données brutes d'une zone, sans tri ni pagination)
 interface CacheItem {
   data: ApiData[];
-  total: number;
   timestamp: number;
 }
 
@@ -94,7 +94,8 @@ function getTypeFromTags(tags: OSMNode['tags']): string {
 }
 
 // Générer une valeur basée sur le type (pour la visualisation)
-function generateValueFromType(type: string): number {
+// La variation dépend de l'identifiant OSM : un même point garde toujours la même valeur.
+function generateValueFromType(type: string, id: number): number {
   const baseValues: Record<string, number> = {
     restaurant: 70,
     hospital: 90,
@@ -109,9 +110,65 @@ function generateValueFromType(type: string): number {
     other: 30
   };
 
-  // Ajouter une variation aléatoire
   const baseValue = baseValues[type] || 50;
-  return baseValue + Math.floor(Math.random() * 20) - 10;
+  return baseValue + (id % 20) - 10;
+}
+
+// Test point-dans-polygone (ray casting) sur des coordonnées [lat, lng]
+export function pointInPolygon(point: L.LatLngTuple, polygon: L.LatLngTuple[]): boolean {
+  const [lat, lng] = point;
+  let inside = false;
+
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [latI, lngI] = polygon[i];
+    const [latJ, lngJ] = polygon[j];
+
+    if ((lngI > lng) !== (lngJ > lng) &&
+      lat < ((latJ - latI) * (lng - lngI)) / (lngJ - lngI) + latI) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
+}
+
+// Appliquer la forme, le tri et la pagination aux données brutes d'une zone.
+// Fait après le cache : changer le tri ou la page ne déclenche aucun appel réseau.
+function shapeResults(all: ApiData[], params: ApiParams): { data: ApiData[], total: number } {
+  const { coordinates, filters, pagination } = params;
+
+  // La requête Overpass ne connaît que la bounding box : restreindre au polygone dessiné
+  let data = coordinates && coordinates.length >= 3
+    ? all.filter(item => pointInPolygon(item.coordinates, coordinates))
+    : [...all];
+
+  if (filters?.sortBy) {
+    const { sortBy, sortOrder } = filters;
+
+    data.sort((a, b) => {
+      const valA = a[sortBy];
+      const valB = b[sortBy];
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortOrder === 'asc'
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
+      }
+
+      return sortOrder === 'asc'
+        ? (valA as number) - (valB as number)
+        : (valB as number) - (valA as number);
+    });
+  }
+
+  const total = data.length;
+
+  if (pagination) {
+    const startIndex = (pagination.page - 1) * pagination.limit;
+    data = data.slice(startIndex, startIndex + pagination.limit);
+  }
+
+  return { data, total };
 }
 
 // Construire la requête Overpass
@@ -192,14 +249,15 @@ function buildOverpassQuery(bounds: L.LatLngBounds): string {
  * Gère le cache, la limitation de débit (throttling), et les tentatives de reconnexion (retries).
  * Transforme les données brutes OSM en format ApiData utilisé par l'application.
  * 
- * @param params - Paramètres de la requête : bounds, filters, pagination.
+ * @param params - Paramètres de la requête : bounds, coordinates, filters, pagination.
  * @returns Une promesse contenant les données transformées et le nombre total d'éléments.
+ * @throws Si toutes les tentatives échouent (un échec n'est jamais mis en cache).
  */
 export async function fetchOSMData(params: ApiParams): Promise<{
   data: ApiData[],
   total: number
 }> {
-  const { bounds, filters, pagination } = params;
+  const { bounds } = params;
 
   if (!bounds) {
     console.error('Les limites de la zone sont requises pour interroger OpenStreetMap');
@@ -213,30 +271,14 @@ export async function fetchOSMData(params: ApiParams): Promise<{
     return { data: [], total: 0 };
   }
 
-  // Générer la clé de cache
-  const cacheKey = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}${filters ? JSON.stringify(filters) : ''}`;
+  // Clé de cache : la zone uniquement (le tri et la pagination sont appliqués après)
+  const cacheKey = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
 
   // Vérifier si les données sont dans le cache
   const cachedData = apiCache.get(cacheKey);
   if (cachedData && (Date.now() - cachedData.timestamp < API_CACHE_DURATION)) {
     console.log('Utilisation des données du cache');
-
-    // Appliquer la pagination si nécessaire
-    if (pagination) {
-      const { page, limit } = pagination;
-      const startIndex = (page - 1) * limit;
-      const paginatedData = cachedData.data.slice(startIndex, startIndex + limit);
-
-      return {
-        data: paginatedData,
-        total: cachedData.total
-      };
-    }
-
-    return {
-      data: cachedData.data,
-      total: cachedData.total
-    };
+    return shapeResults(cachedData.data, params);
   }
 
   // Limitation des appels API
@@ -248,6 +290,7 @@ export async function fetchOSMData(params: ApiParams): Promise<{
 
   let retryCount = 0;
   const maxRetries = 2;
+  let lastError: unknown;
 
   while (retryCount <= maxRetries) {
     try {
@@ -274,7 +317,7 @@ export async function fetchOSMData(params: ApiParams): Promise<{
       const osmData: OSMResponse = await response.json();
 
       // Transformer les données OSM au format de l'application
-      let transformedData: ApiData[] = osmData.elements
+      const transformedData: ApiData[] = osmData.elements
         .filter(element => element && typeof element.lat === 'number' && typeof element.lon === 'number')
         .map(element => {
           const { tags } = element;
@@ -293,61 +336,30 @@ export async function fetchOSMData(params: ApiParams): Promise<{
               .join(', '),
             coordinates: [element.lat, element.lon] as [number, number],
             type: getTypeFromTags(tags),
-            value: generateValueFromType(getTypeFromTags(tags)),
+            value: generateValueFromType(getTypeFromTags(tags), element.id),
             phone,
             email,
             website,
           };
         });
 
-      // Appliquer les filtres si nécessaire (sauf le filtre par type qui est géré côté client via la légende)
-      if (filters) {
-        const { sortBy, sortOrder } = filters;
-
-        if (sortBy) {
-          transformedData.sort((a, b) => {
-            const valA = a[sortBy as keyof ApiData];
-            const valB = b[sortBy as keyof ApiData];
-
-            if (typeof valA === 'string' && typeof valB === 'string') {
-              return sortOrder === 'asc'
-                ? valA.localeCompare(valB)
-                : valB.localeCompare(valA);
-            }
-
-            return sortOrder === 'asc'
-              ? (valA as number) - (valB as number)
-              : (valB as number) - (valA as number);
-          });
-        }
-      }
-
-      // Mettre en cache les données complètes
-      apiCache.set(cacheKey, {
-        data: transformedData,
-        total: transformedData.length,
-        timestamp: Date.now()
+      // Purger les entrées périmées, puis la plus ancienne si le cache est plein
+      const now = Date.now();
+      apiCache.forEach((item, key) => {
+        if (now - item.timestamp >= API_CACHE_DURATION) apiCache.delete(key);
       });
-
-      // Appliquer la pagination si nécessaire et retourner
-      if (pagination) {
-        const { page, limit } = pagination;
-        const startIndex = (page - 1) * limit;
-        const paginatedData = transformedData.slice(startIndex, startIndex + limit);
-
-        return {
-          data: paginatedData,
-          total: transformedData.length
-        };
+      if (apiCache.size >= MAX_CACHE_ENTRIES) {
+        apiCache.delete(apiCache.keys().next().value as string);
       }
 
-      return {
-        data: transformedData,
-        total: transformedData.length
-      };
+      // Mettre en cache les données brutes de la zone
+      apiCache.set(cacheKey, { data: transformedData, timestamp: now });
+
+      return shapeResults(transformedData, params);
     } catch (error) {
       console.error(`Erreur lors de la récupération des données OSM (tentative ${retryCount + 1}/${maxRetries + 1}):`, error);
 
+      lastError = error;
       retryCount++;
 
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -359,15 +371,13 @@ export async function fetchOSMData(params: ApiParams): Promise<{
         const delay = Math.pow(2, retryCount) * 1000;
         console.log(`Nouvelle tentative dans ${delay / 1000} secondes...`);
         await new Promise(resolve => setTimeout(resolve, delay));
-      } else {
-        // En cas d'erreur persistante, retourner un tableau vide
-        return { data: [], total: 0 };
       }
     }
   }
 
-  // Si toutes les tentatives ont échoué
-  return { data: [], total: 0 };
+  // Toutes les tentatives ont échoué : propager l'erreur pour que l'appelant puisse
+  // l'afficher et réessayer, au lieu de mettre en cache un résultat vide
+  throw lastError instanceof Error ? lastError : new Error('Échec de la récupération des données OpenStreetMap');
 }
 
 // Vider le cache
@@ -381,12 +391,12 @@ export function clearOSMCache(): void {
 // Obtenir des statistiques sur le cache
 /**
  * Récupère les statistiques actuelles du cache API.
- * @returns Un objet contenant la taille actuelle, la taille max théorique et la durée de validité.
+ * @returns Un objet contenant la taille actuelle, la taille max et la durée de validité.
  */
 export function getOSMCacheStats(): { size: number; maxSize: number; duration: number } {
   return {
     size: apiCache.size,
-    maxSize: 100, // Nombre maximal d'entrées dans le cache
+    maxSize: MAX_CACHE_ENTRIES,
     duration: API_CACHE_DURATION
   };
 }

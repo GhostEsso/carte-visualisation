@@ -1,3 +1,5 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -6,6 +8,11 @@ module.exports = {
   ],
   darkMode: 'class',
   theme: {
+    // xs défini avant les breakpoints par défaut pour garder l'ordre croissant
+    screens: {
+      xs: '475px',
+      ...defaultTheme.screens,
+    },
     extend: {
       colors: {
         primary: {
