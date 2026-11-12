@@ -24,8 +24,11 @@ export const convertToCSV = (data: ApiData[]): string => {
           return `"${value.join(' ')}"`;
         } else if (typeof value === 'object') {
           return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-        } else if (typeof value === 'string' && /[",\r\n]/.test(value)) {
-          return `"${value.replace(/"/g, '""')}"`;
+        } else if (typeof value === 'string') {
+          // Les tags OSM sont modifiables par n'importe qui : préfixer d'une apostrophe toute
+          // valeur qu'un tableur interpréterait comme une formule (injection CSV)
+          const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+          return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
         }
         
         return value;
