@@ -194,6 +194,13 @@ const getIcon = (type: string): L.Icon => {
     return icon;
 };
 
+// Zone de chargement des points d'intérêt autour d'un centre
+const boundsAround = (center: [number, number], padding = 0.05): L.LatLngBounds =>
+    new L.LatLngBounds(
+        [center[0] - padding, center[1] - padding],
+        [center[0] + padding, center[1] + padding]
+    );
+
 // Composant principal de la carte
 const MapContent = () => {
     const [drawMode, setDrawMode] = useState<DrawMode>(null);
@@ -204,6 +211,8 @@ const MapContent = () => {
     // Centre par défaut : Lomé, Togo (Afrique de l'Ouest)
     const [mapCenter, setMapCenter] = useState<[number, number]>([6.1725, 1.2314]);
     const [mapZoom, setMapZoom] = useState(12);
+    // Zone dont on charge les points d'intérêt (indépendante de la vue de la carte)
+    const [poiBounds, setPoiBounds] = useState<L.LatLngBounds>(() => boundsAround([6.1725, 1.2314]));
     const [isEditMode, setIsEditMode] = useState(false);
     const [searchLocation, setSearchLocation] = useState<string | null>(null);
     const [infoCollapsed, setInfoCollapsed] = useState(false);
@@ -216,20 +225,16 @@ const MapContent = () => {
         fixLeafletIcons();
     }, []);
 
-    // Récupérer les points d'intérêt initiaux
+    // Récupérer les points d'intérêt de la zone courante
     useEffect(() => {
         let isCancelled = false;
 
         const fetchInitialPoints = async () => {
             setLoading(true);
             try {
-                const padding = 0.05;
                 const response = await throttledFetchData({
-                    bounds: new L.LatLngBounds(
-                        [mapCenter[0] - padding, mapCenter[1] - padding],
-                        [mapCenter[0] + padding, mapCenter[1] + padding]
-                    ),
-                    pagination: { page: 1, limit: 100 }
+                    bounds: poiBounds,
+                    pagination: { page: 1, limit: 150 }
                 });
 
                 if (!isCancelled && response?.data) {
@@ -252,7 +257,7 @@ const MapContent = () => {
         return () => {
             isCancelled = true;
         };
-    }, [mapCenter]);
+    }, [poiBounds]);
 
     // Callback pour la référence de la carte
     const handleMapReady = useCallback((map: L.Map) => {
@@ -411,12 +416,12 @@ const MapContent = () => {
         bounds?: L.LatLngBounds;
         name: string;
     }) => {
-        setLoading(true);
-        setMapCenter(location.center);
-
+        // Avec des limites : cadrer dessus sans toucher mapCenter/mapZoom,
+        // sinon MapController refait un setView qui annule le fitBounds
         if (location.bounds && mapRef.current) {
             mapRef.current.fitBounds(location.bounds);
         } else {
+            setMapCenter(location.center);
             setMapZoom(14);
         }
 
@@ -427,31 +432,8 @@ const MapContent = () => {
             setSelectedShape(null);
         }
 
-        const fetchPointsForLocation = async () => {
-            try {
-                const padding = 0.05;
-                const response = await throttledFetchData({
-                    bounds: location.bounds || new L.LatLngBounds(
-                        [location.center[0] - padding, location.center[1] - padding],
-                        [location.center[0] + padding, location.center[1] + padding]
-                    ),
-                    pagination: { page: 1, limit: 150 }
-                });
-
-                if (response?.data) {
-                    setPointsOfInterest(response.data);
-                } else {
-                    setPointsOfInterest([]);
-                }
-            } catch (error) {
-                console.error('Erreur lors du chargement des points d\'intérêt:', error);
-                setPointsOfInterest([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchPointsForLocation();
+        // Un seul chargement, déclenché par l'effet ci-dessus
+        setPoiBounds(location.bounds || boundsAround(location.center));
     }, []);
 
     // Mémoiser les points filtrés

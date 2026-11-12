@@ -33,12 +33,26 @@ const SearchBar = ({ onLocationSelect }: SearchBarProps) => {
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Identifiant de la dernière recherche : une réponse plus ancienne est ignorée
+  const searchIdRef = useRef(0);
+
+  // Annuler la recherche en attente et invalider celle en cours
+  const cancelPendingSearch = () => {
+    searchIdRef.current++;
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    setLoading(false);
+  };
   
   // Recherche via Nominatim OpenStreetMap API avec gestion d'erreur améliorée
   const searchLocations = async (searchQuery: string) => {
+    const searchId = ++searchIdRef.current;
+
     if (!searchQuery.trim()) {
       setResults([]);
       setError(null);
+      setLoading(false);
       return;
     }
     
@@ -62,8 +76,11 @@ const SearchBar = ({ onLocationSelect }: SearchBarProps) => {
       }
       
       const data = await response.json();
+
+      if (searchId !== searchIdRef.current) return;
       
       if (data.length === 0) {
+        setResults([]);
         setError('Aucun résultat trouvé. Essayez de modifier votre recherche.');
       } else {
         // Trier les résultats par importance (si disponible) pour privilégier les lieux plus connus
@@ -73,11 +90,15 @@ const SearchBar = ({ onLocationSelect }: SearchBarProps) => {
         setResults(sortedData);
       }
     } catch (error) {
+      if (searchId !== searchIdRef.current) return;
+
       console.error('Erreur lors de la recherche:', error);
       setError('Impossible de compléter la recherche. Veuillez réessayer plus tard.');
       setResults([]);
     } finally {
-      setLoading(false);
+      if (searchId === searchIdRef.current) {
+        setLoading(false);
+      }
     }
   };
   
@@ -101,6 +122,7 @@ const SearchBar = ({ onLocationSelect }: SearchBarProps) => {
       debounceSearch(value);
       setShowResults(true);
     } else {
+      cancelPendingSearch();
       setResults([]);
       setError(null);
       setShowResults(false);
@@ -130,6 +152,8 @@ const SearchBar = ({ onLocationSelect }: SearchBarProps) => {
       }
     }
     
+    cancelPendingSearch();
+
     onLocationSelect({
       center,
       bounds,
@@ -156,6 +180,7 @@ const SearchBar = ({ onLocationSelect }: SearchBarProps) => {
 
   // Effacer la recherche
   const handleClearSearch = () => {
+    cancelPendingSearch();
     setQuery('');
     setResults([]);
     setShowResults(false);

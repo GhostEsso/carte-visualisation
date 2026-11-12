@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DrawnShape, ApiData, LoadingState, FilterOptions, PaginationOptions } from '../types';
 import { fetchDataWithCache, apiCacheService } from '../services/api-cache';
 import { exportData } from '../utils/export';
@@ -22,6 +22,7 @@ type ChartType = 'pie' | 'bar' | 'line';
 
 const DataVisualization = ({ shape, filteredTypes }: DataVisualizationProps) => {
   // États principaux
+  // Toutes les données de la zone, triées (ni filtrées par type, ni paginées)
   const [data, setData] = useState<ApiData[]>([]);
   const [loadingState, setLoadingState] = useState<LoadingState>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -31,11 +32,7 @@ const DataVisualization = ({ shape, filteredTypes }: DataVisualizationProps) => 
     sortBy: 'value',
     sortOrder: 'desc'
   });
-  const [pagination, setPagination] = useState<PaginationOptions>({
-    page: 1,
-    limit: 10,
-    total: 0
-  });
+  const [pageState, setPageState] = useState({ page: 1, limit: 10 });
 
   // États d'affichage
   const [activeView, setActiveView] = useState<ViewMode>('table');
@@ -43,39 +40,39 @@ const DataVisualization = ({ shape, filteredTypes }: DataVisualizationProps) => 
   const [cacheStats, setCacheStats] = useState({ size: 0, maxSize: 0, duration: 0 });
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  // Récupérer les données
+  // Identifiant de la dernière requête : une réponse plus ancienne est ignorée
+  const requestIdRef = useRef(0);
+
+  // Récupérer les données (nouvelle zone ou nouveau tri)
   const fetchData = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     setLoadingState('loading');
     setError(null);
+    setPageState(prev => ({ ...prev, page: 1 }));
 
     try {
-      const params = {
+      const response = await fetchDataWithCache({
         bounds: shape.bounds,
         center: shape.center,
         radius: shape.radius,
         coordinates: shape.coordinates as [number, number][],
         filters,
-        // Ne pas paginer côté API, on le fera après le filtrage par type
-      };
+        // Pas de pagination côté API : elle se fait après le filtrage par type
+      });
 
-      const response = await fetchDataWithCache(params);
+      if (requestId !== requestIdRef.current) return;
 
-      // 1. D'abord filtrer par les types sélectionnés dans la légende
-      const typeFilteredData = response.data.filter(item => filteredTypes.includes(item.type));
-
-      // 2. Puis appliquer la pagination côté client
-      const startIndex = (pagination.page - 1) * pagination.limit;
-      const paginatedData = typeFilteredData.slice(startIndex, startIndex + pagination.limit);
-
-      setData(paginatedData);
-      setPagination(prev => ({ ...prev, total: typeFilteredData.length }));
+      setData(response.data);
       setLoadingState('success');
       setCacheStats(apiCacheService.getCacheStats());
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
+
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
       setLoadingState('error');
     }
-  }, [shape, filters, pagination.page, pagination.limit, filteredTypes]);
+  }, [shape, filters]);
 
   useEffect(() => {
     if (shape) {
@@ -83,43 +80,49 @@ const DataVisualization = ({ shape, filteredTypes }: DataVisualizationProps) => 
     }
   }, [shape, fetchData]);
 
+  // Données filtrées par les types de la légende : base des graphiques, de l'export et du total
+  const typeFilteredData = useMemo(
+    () => data.filter(item => filteredTypes.includes(item.type)),
+    [data, filteredTypes]
+  );
+
+  // Pagination dérivée : la page est bornée, elle ne peut pas dépasser le total filtré
+  const pagination = useMemo<PaginationOptions>(() => {
+    const total = typeFilteredData.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageState.limit));
+
+    return { page: Math.min(pageState.page, totalPages), limit: pageState.limit, total };
+  }, [typeFilteredData, pageState]);
+
+  // Page courante du tableau
+  const pageData = useMemo(() => {
+    const startIndex = (pagination.page - 1) * pagination.limit;
+    return typeFilteredData.slice(startIndex, startIndex + pagination.limit);
+  }, [typeFilteredData, pagination.page, pagination.limit]);
+
   // Gestionnaires d'événements
   const handleFilterChange = useCallback((key: keyof FilterOptions, value: unknown) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
   }, []);
 
   const handlePageChange = useCallback((newPage: number) => {
     const totalPages = Math.ceil(pagination.total / pagination.limit);
     if (newPage > 0 && newPage <= totalPages) {
-      setPagination(prev => ({ ...prev, page: newPage }));
+      setPageState(prev => ({ ...prev, page: newPage }));
     }
   }, [pagination.total, pagination.limit]);
 
   const handlePaginationChange = useCallback((changes: Partial<PaginationOptions>) => {
-    setPagination(prev => ({ ...prev, ...changes }));
+    setPageState(prev => ({
+      page: changes.page ?? prev.page,
+      limit: changes.limit ?? prev.limit
+    }));
   }, []);
 
-  const handleExport = useCallback(async (format: 'csv' | 'json' | 'geojson') => {
-    setLoadingState('loading');
-
-    try {
-      const params = {
-        bounds: shape.bounds,
-        center: shape.center,
-        radius: shape.radius,
-        coordinates: shape.coordinates as [number, number][],
-        filters,
-      };
-
-      const response = await fetchDataWithCache(params);
-      exportData(response.data, format);
-      setLoadingState('success');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de l\'exportation');
-      setLoadingState('error');
-    }
-  }, [shape, filters]);
+  // Exporter ce qui est affiché : toute la zone, filtrée par les types de la légende
+  const handleExport = useCallback((format: 'csv' | 'json' | 'geojson') => {
+    exportData(typeFilteredData, format);
+  }, [typeFilteredData]);
 
   const handleClearCache = useCallback(() => {
     apiCacheService.clearCache();
@@ -136,7 +139,7 @@ const DataVisualization = ({ shape, filteredTypes }: DataVisualizationProps) => 
     return <ErrorMessage error={error || 'Erreur inconnue'} onRetry={fetchData} />;
   }
 
-  if (data.length === 0) {
+  if (typeFilteredData.length === 0) {
     return <EmptyState />;
   }
 
@@ -189,13 +192,13 @@ const DataVisualization = ({ shape, filteredTypes }: DataVisualizationProps) => 
       {/* Contenu principal */}
       {activeView === 'table' ? (
         <DataTable
-          data={data}
+          data={pageData}
           pagination={pagination}
           onPageChange={handlePageChange}
         />
       ) : (
         <DataCharts
-          data={data}
+          data={typeFilteredData}
           activeChart={activeChart}
           onChartChange={setActiveChart}
         />

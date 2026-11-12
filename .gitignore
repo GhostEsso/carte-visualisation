@@ -42,6 +42,10 @@ ENV/
 
 # AI Assistant
 /.ra-aid/
+/.claude/
+/.claude-flow/
+/.mcp.json
+/CLAUDE.md
 
 # Documentation personnelle
 COMPOSANTS.md
