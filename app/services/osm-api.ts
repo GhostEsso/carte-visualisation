@@ -4,7 +4,14 @@ import L from 'leaflet';
 import { ApiData, ApiParams } from '../types';
 
 // Configuration de l'API
-const OVERPASS_API_URL = process.env.NEXT_PUBLIC_OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter';
+// Serveurs Overpass publics, essayés dans l'ordre : si l'un est injoignable, on passe au suivant
+const OVERPASS_API_URLS = [
+  process.env.NEXT_PUBLIC_OVERPASS_API_URL,
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+].filter((url): url is string => Boolean(url));
 const API_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const THROTTLE_DELAY = 1000; // 1 seconde entre les appels
 const MAX_CACHE_ENTRIES = 100; // Nombre maximal d'entrées dans le cache
@@ -37,6 +44,8 @@ interface OSMResponse {
 // Cache d'API
 const apiCache = new Map<string, CacheItem>();
 let lastCallTime = 0;
+// Index du dernier serveur ayant répondu : il est essayé en premier au prochain appel
+let preferredServer = 0;
 
 // Déterminer le type d'un élément OSM
 function getTypeFromTags(tags: OSMNode['tags']): string {
@@ -246,7 +255,7 @@ function buildOverpassQuery(bounds: L.LatLngBounds): string {
 // Récupérer les données depuis l'API OSM
 /**
  * Récupère les données géographiques depuis l'API OpenStreetMap via Overpass.
- * Gère le cache, la limitation de débit (throttling), et les tentatives de reconnexion (retries).
+ * Gère le cache, la limitation de débit (throttling), et le repli sur d'autres serveurs Overpass.
  * Transforme les données brutes OSM en format ApiData utilisé par l'application.
  * 
  * @param params - Paramètres de la requête : bounds, coordinates, filters, pagination.
@@ -289,7 +298,7 @@ export async function fetchOSMData(params: ApiParams): Promise<{
   }
 
   let retryCount = 0;
-  const maxRetries = 2;
+  const maxRetries = OVERPASS_API_URLS.length - 1;
   let lastError: unknown;
 
   while (retryCount <= maxRetries) {
@@ -304,7 +313,9 @@ export async function fetchOSMData(params: ApiParams): Promise<{
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 20000); // Timeout de 20 secondes
 
-      const response = await fetch(`${OVERPASS_API_URL}?data=${encodeURIComponent(query)}`, {
+      const serverIndex = (preferredServer + retryCount) % OVERPASS_API_URLS.length;
+
+      const response = await fetch(`${OVERPASS_API_URLS[serverIndex]}?data=${encodeURIComponent(query)}`, {
         signal: controller.signal
       });
 
@@ -315,6 +326,7 @@ export async function fetchOSMData(params: ApiParams): Promise<{
       }
 
       const osmData: OSMResponse = await response.json();
+      preferredServer = serverIndex;
 
       // Transformer les données OSM au format de l'application
       const transformedData: ApiData[] = osmData.elements
@@ -366,18 +378,16 @@ export async function fetchOSMData(params: ApiParams): Promise<{
         console.warn('Requête interrompue pour cause de timeout');
       }
 
-      if (retryCount <= maxRetries) {
-        // Attendre un délai exponentiel avant de réessayer
-        const delay = Math.pow(2, retryCount) * 1000;
-        console.log(`Nouvelle tentative dans ${delay / 1000} secondes...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+      // Pas d'attente : la tentative suivante vise un autre serveur
     }
   }
 
   // Toutes les tentatives ont échoué : propager l'erreur pour que l'appelant puisse
   // l'afficher et réessayer, au lieu de mettre en cache un résultat vide
-  throw lastError instanceof Error ? lastError : new Error('Échec de la récupération des données OpenStreetMap');
+  throw new Error(
+    'Les serveurs OpenStreetMap (Overpass) sont injoignables ou surchargés. Réessayez dans quelques instants.',
+    { cause: lastError }
+  );
 }
 
 // Vider le cache
