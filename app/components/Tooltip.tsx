@@ -61,7 +61,6 @@ const Tooltip = ({ content, children, position = 'top', delay = 200 }: TooltipPr
 
     // Cloner l'enfant pour attacher les refs et événements
     const trigger = React.cloneElement(children, {
-        // @ts-ignore - ref est valide sur les éléments React
         ref: triggerRef,
         onMouseEnter: show,
         onMouseLeave: hide,
