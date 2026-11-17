@@ -38,6 +38,12 @@ export interface ApiData {
   website?: string;
 }
 
+/**
+ * Lieu renvoyé par la route /api/places (Geoapify), avant calcul de la valeur côté client.
+ * `seed` est un entier stable propre au lieu, dont la valeur affichée est dérivée.
+ */
+export type Place = Omit<ApiData, 'value'> & { seed: number };
+
 // Configuration pour les filtres
 export interface FilterOptions {
   type?: string;

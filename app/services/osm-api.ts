@@ -1,7 +1,7 @@
 'use client';
 
 import L from 'leaflet';
-import { ApiData, ApiParams } from '../types';
+import { ApiData, ApiParams, Place } from '../types';
 
 // Configuration de l'API
 // Serveurs Overpass publics, essayés dans l'ordre : si l'un est injoignable, on passe au suivant
@@ -15,6 +15,7 @@ const OVERPASS_API_URLS = [
 const API_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const THROTTLE_DELAY = 1000; // 1 seconde entre les appels
 const MAX_CACHE_ENTRIES = 100; // Nombre maximal d'entrées dans le cache
+const MAX_PLACES = 2000; // Plafond de lieux par zone côté Geoapify (voir services/geoapify.ts)
 
 // Cache pour les résultats de l'API (données brutes d'une zone, sans tri ni pagination)
 interface CacheItem {
@@ -252,9 +253,41 @@ function buildOverpassQuery(bounds: L.LatLngBounds): string {
   `;
 }
 
+// Mettre en cache les données brutes d'une zone
+function storeInCache(cacheKey: string, data: ApiData[]): void {
+  // Purger les entrées périmées, puis la plus ancienne si le cache est plein
+  const now = Date.now();
+  apiCache.forEach((item, key) => {
+    if (now - item.timestamp >= API_CACHE_DURATION) apiCache.delete(key);
+  });
+  if (apiCache.size >= MAX_CACHE_ENTRIES) {
+    apiCache.delete(apiCache.keys().next().value as string);
+  }
+
+  apiCache.set(cacheKey, { data, timestamp: now });
+}
+
+// Source principale : Geoapify Places, via la route serveur /api/places (la clé reste côté serveur)
+async function fetchFromGeoapify(bbox: string, max: number): Promise<ApiData[]> {
+  const response = await fetch(`/api/places?bbox=${bbox}&max=${max}`, {
+    signal: AbortSignal.timeout(30000)
+  });
+
+  if (!response.ok) {
+    throw new Error(`/api/places: ${response.status} ${response.statusText}`);
+  }
+
+  const { places }: { places: Place[] } = await response.json();
+
+  return places.map(({ seed, ...place }) => ({
+    ...place,
+    value: generateValueFromType(place.type, seed)
+  }));
+}
+
 // Récupérer les données depuis l'API OSM
 /**
- * Récupère les données géographiques depuis l'API OpenStreetMap via Overpass.
+ * Récupère les points d'intérêt d'une zone : Geoapify Places d'abord, Overpass en repli.
  * Gère le cache, la limitation de débit (throttling), et le repli sur d'autres serveurs Overpass.
  * Transforme les données brutes OSM en format ApiData utilisé par l'application.
  * 
@@ -280,14 +313,28 @@ export async function fetchOSMData(params: ApiParams): Promise<{
     return { data: [], total: 0 };
   }
 
-  // Clé de cache : la zone uniquement (le tri et la pagination sont appliqués après)
-  const cacheKey = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+  // Nombre de lieux nécessaires : avec pagination (marqueurs de la carte) on ne demande
+  // que le début de la zone, ce qui économise les crédits Geoapify
+  const { pagination } = params;
+  const maxPlaces = pagination ? Math.min(MAX_PLACES, pagination.page * pagination.limit) : MAX_PLACES;
+
+  // Clé de cache : la zone et le nombre de lieux demandés (le tri et la pagination sont appliqués après)
+  const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+  const cacheKey = `${bbox}|${maxPlaces}`;
 
   // Vérifier si les données sont dans le cache
   const cachedData = apiCache.get(cacheKey);
   if (cachedData && (Date.now() - cachedData.timestamp < API_CACHE_DURATION)) {
     console.log('Utilisation des données du cache');
     return shapeResults(cachedData.data, params);
+  }
+
+  try {
+    const places = await fetchFromGeoapify(bbox, maxPlaces);
+    storeInCache(cacheKey, places);
+    return shapeResults(places, params);
+  } catch (error) {
+    console.warn('Geoapify indisponible, repli sur Overpass:', error);
   }
 
   // Limitation des appels API
@@ -355,17 +402,7 @@ export async function fetchOSMData(params: ApiParams): Promise<{
           };
         });
 
-      // Purger les entrées périmées, puis la plus ancienne si le cache est plein
-      const now = Date.now();
-      apiCache.forEach((item, key) => {
-        if (now - item.timestamp >= API_CACHE_DURATION) apiCache.delete(key);
-      });
-      if (apiCache.size >= MAX_CACHE_ENTRIES) {
-        apiCache.delete(apiCache.keys().next().value as string);
-      }
-
-      // Mettre en cache les données brutes de la zone
-      apiCache.set(cacheKey, { data: transformedData, timestamp: now });
+      storeInCache(cacheKey, transformedData);
 
       return shapeResults(transformedData, params);
     } catch (error) {
@@ -385,7 +422,7 @@ export async function fetchOSMData(params: ApiParams): Promise<{
   // Toutes les tentatives ont échoué : propager l'erreur pour que l'appelant puisse
   // l'afficher et réessayer, au lieu de mettre en cache un résultat vide
   throw new Error(
-    'Les serveurs OpenStreetMap (Overpass) sont injoignables ou surchargés. Réessayez dans quelques instants.',
+    'Les services de données (Geoapify et Overpass) sont injoignables ou surchargés. Réessayez dans quelques instants.',
     { cause: lastError }
   );
 }
