@@ -13,9 +13,9 @@ const LazyMapContent = () => {
 
     const loadMapContent = async () => {
       try {
-        const module = await import('./MapContent');
+        const mapModule = await import('./MapContent');
         if (isMounted) {
-          setMapContent(() => module.default);
+          setMapContent(() => mapModule.default);
         }
       } catch (err) {
         if (isMounted) {
